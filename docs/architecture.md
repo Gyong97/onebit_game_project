@@ -87,3 +87,20 @@
 * `map_scroll()` 호출 후 `turn_manager`가 새 y=0 행을 스캔
 * 각 내부 열(x=1..MAP_WIDTH-2)에 대해 `rand() % 100 < MONSTER_SPAWN_PCT` 이면 스폰
 * 몬스터 풀이 가득 찬 경우 스폰 생략
+
+## 데이터 구조 설계
+* **Player Struct 확장:**
+  ```c
+  typedef struct {
+      int hp, max_hp;
+      int atk, def;
+      int coins;
+      item_t inventory[10];
+      item_t equipment[3]; // 0: Weapon, 1: Head, 2: Body
+  } player_t;
+  ```
+* Map Manager:
+
+    * current_viewport_y: 현재 화면에 보여지는 맵의 시작 절대 좌표를 추적.
+
+    * render_map(): 전체 맵 배열에서 current_viewport_y부터 10줄을 읽어 상대 좌표로 렌더링.
