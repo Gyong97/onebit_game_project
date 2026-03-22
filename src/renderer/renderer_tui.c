@@ -46,11 +46,12 @@ int renderer_draw(const render_frame_t *p_frame)
         putchar('\n');
     }
 
-    /* Draw the HUD: player stats */
-    printf("HP: %d/%d  ATK: %d\n",
+    /* Draw the HUD: player stats + depth */
+    printf("HP: %d/%d  ATK: %d  DEPTH: %ld\n",
            p_frame->player_hp,
            p_frame->player_max_hp,
-           p_frame->player_atk);
+           p_frame->player_atk,
+           p_frame->scroll_count);
 
     /* Draw the event message if one is present */
     if (p_frame->message[0] != '\0') {

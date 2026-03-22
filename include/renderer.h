@@ -9,9 +9,9 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-/* ── Map dimensions (fixed 10x10 grid per game spec) ─────────────────── */
+/* ── Map dimensions (viewport is always 10 cols × 10 rows) ───────────── */
 #define MAP_WIDTH  10
-#define MAP_HEIGHT 10
+#define MAP_HEIGHT 10   /* visible viewport height; logical map is infinite */
 
 /* ── Message buffer size ──────────────────────────────────────────────── */
 #define MSG_BUF_SIZE 128
@@ -34,10 +34,11 @@ typedef enum {
  * The renderer must treat this data as read-only.
  */
 typedef struct {
-    tile_type_t tiles[MAP_HEIGHT][MAP_WIDTH]; /* full map grid */
+    tile_type_t tiles[MAP_HEIGHT][MAP_WIDTH]; /* viewport tile grid (rows[0] = top) */
     int         player_hp;                    /* current HP */
     int         player_max_hp;               /* maximum HP */
     int         player_atk;                  /* attack power */
+    long        scroll_count;                 /* rows scrolled = depth traveled */
     char        message[MSG_BUF_SIZE];        /* event log line (may be empty) */
 } render_frame_t;
 

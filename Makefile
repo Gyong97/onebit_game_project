@@ -21,17 +21,14 @@ LIB_SRCS  := $(wildcard $(LOGIC_DIR)/*.c) \
 
 # Game executable: entry point + library sources
 GAME_SRCS := $(SRC_DIR)/main.c $(LIB_SRCS)
-
-# Test executable: test sources + library sources (no main.c from src/)
-TEST_SRCS := $(wildcard $(TEST_DIR)/*.c) $(LIB_SRCS)
-
-# ── Derived object file lists ─────────────────────────────────────────────────
 GAME_OBJS := $(GAME_SRCS:.c=.o)
-TEST_OBJS := $(TEST_SRCS:.c=.o)
 
 # ── Output binaries ───────────────────────────────────────────────────────────
-TARGET      := $(BIN_DIR)/onebit
-TEST_TARGET := $(BIN_DIR)/test_runner
+TARGET := $(BIN_DIR)/onebit
+
+# Each tests/test_*.c is compiled into its own binary: bin/test_*
+TEST_CSRCS := $(wildcard $(TEST_DIR)/test_*.c)
+TEST_BINS  := $(patsubst $(TEST_DIR)/%.c,$(BIN_DIR)/%,$(TEST_CSRCS))
 
 # ── Phony targets ─────────────────────────────────────────────────────────────
 .PHONY: all test clean
@@ -39,8 +36,14 @@ TEST_TARGET := $(BIN_DIR)/test_runner
 # ── Build targets ─────────────────────────────────────────────────────────────
 all: $(BIN_DIR) $(TARGET)
 
-test: $(BIN_DIR) $(TEST_TARGET)
-	./$(TEST_TARGET)
+test: $(BIN_DIR) $(TEST_BINS)
+	@failed=0; \
+	for t in $(TEST_BINS); do \
+		echo "--- Running $$t ---"; \
+		$$t || failed=$$((failed + 1)); \
+	done; \
+	[ $$failed -eq 0 ] && echo "=== All test suites passed. ===" \
+	|| (echo "=== $$failed suite(s) FAILED. ===" && exit 1)
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
@@ -48,7 +51,8 @@ $(BIN_DIR):
 $(TARGET): $(GAME_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-$(TEST_TARGET): $(TEST_OBJS)
+# Each test binary links its own .c against all library sources
+$(BIN_DIR)/test_%: $(TEST_DIR)/test_%.c $(LIB_SRCS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # ── Pattern rule: compile each .c to its .o in-place ─────────────────────────
