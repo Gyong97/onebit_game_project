@@ -1,0 +1,93 @@
+==========================================
+
+C/C++ 빌드 결과물 및 부산물 무시
+
+==========================================
+
+Object files
+
+*.o
+*.ko
+*.obj
+*.elf
+
+Precompiled Headers
+
+*.gch
+*.pch
+
+Libraries
+
+*.lib
+*.a
+*.la
+*.lo
+*.so
+.so.
+*.dylib
+*.dll
+
+Executables
+
+*.exe
+*.out
+*.app
+.i86
+*.x86_64
+*.hex
+
+빌드 디렉터리 전체 무시 (프로젝트 구조에 맞춤)
+
+/bin/
+/build/
+/obj/
+
+==========================================
+
+IDE 및 에디터 설정 파일 무시
+
+==========================================
+
+VSCode (팀 공용 설정인 settings, tasks, launch는 예외 처리하여 공유)
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+Vim / Emacs 등
+
+*.swp
+*.swo
+~
+.#
+
+==========================================
+
+OS 자동 생성 파일 무시
+
+==========================================
+
+Windows
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+macOS
+
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+==========================================
+
+기타
+
+==========================================
+
+*.log
+*.sqlite
