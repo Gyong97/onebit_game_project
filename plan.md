@@ -5,7 +5,7 @@
 ## [ ] 1단계: 프로젝트 기초 골격 및 추상화 인터페이스
 - [x] 디렉터리 구조 생성 (`src/logic`, `src/renderer`, `include`, `tests`, `docs`)
 - [x] `include/renderer.h` 및 `include/input.h` 추상 인터페이스 헤더 정의
-- [ ] TUI 기반 기초 렌더러 구현 (`src/renderer/renderer_tui.c`)
+- [x] TUI 기반 기초 렌더러 구현 (`src/renderer/renderer_tui.c`)
 - [ ] 소스와 헤더를 분리하여 빌드할 수 있는 `Makefile` 작성
 
 ## [ ] 2단계: 핵심 엔진 및 플레이어 로직
