@@ -12,13 +12,22 @@
  * turn_manager_player_act() each input cycle.  The render layer reads
  * game_state_t.map and entity fields to build render_frame_t.
  *
- * Return codes (unless noted):
- *   0  — player acted and game continues normally
- *   1  — player was blocked; no monster turn took place
- *  -1  — error (NULL argument or internal failure)
+ * Return codes for turn_manager_player_act():
+ *   0               — player acted, game continues normally
+ *   1               — player was blocked; no monster turn took place
+ *   TURN_GAME_OVER  — player's HP reached 0 after monsters acted
+ *  -1               — error (NULL argument or internal failure)
  */
 #ifndef TURN_MANAGER_H
 #define TURN_MANAGER_H
+
+/* ── Turn result codes ────────────────────────────────────────────────── */
+#define TURN_GAME_OVER   2   /* player HP reached 0 — game ends           */
+
+/* ── Chest reward constants ───────────────────────────────────────────── */
+#define CHEST_SPAWN_PCT  15  /* % chance per interior column on new row   */
+#define CHEST_HP_REWARD  20  /* HP healed when opening a chest            */
+#define CHEST_ATK_REWARD  5  /* ATK gained when opening a chest           */
 
 #include "monster.h"       /* monster_t, MONSTER_MAX_COUNT */
 #include "player.h"        /* player_t */
@@ -121,5 +130,21 @@ int turn_manager_spawn_row(game_state_t *p_state);
  * @return Number of alive monsters, or -1 on error.
  */
 int turn_manager_alive_count(const game_state_t *p_state);
+
+/**
+ * @brief Open a chest at (x, y) and give the player a random reward.
+ *
+ * Reward is chosen randomly:
+ *   rand() % 2 == 0 → HP reward: player.hp += CHEST_HP_REWARD (capped at max_hp)
+ *   rand() % 2 == 1 → ATK reward: player.atk += CHEST_ATK_REWARD
+ *
+ * The chest tile at (x, y) is replaced with TILE_FLOOR.
+ *
+ * @param p_state  Game state; must not be NULL.
+ * @param x        Column of the chest.
+ * @param y        Row    of the chest.
+ * @return 0 on success, -1 on error.
+ */
+int turn_manager_open_chest(game_state_t *p_state, int x, int y);
 
 #endif /* TURN_MANAGER_H */

@@ -45,7 +45,8 @@ int monster_init(monster_t *p_monster, int x, int y)
  * @return 0 on normal resolution (moved/attacked/blocked),
  *         -1 on map access error.
  */
-static int try_step(monster_t *p_monster, map_t *p_map,
+static int try_step(monster_t *p_monster, player_t *p_player,
+                    map_t *p_map,
                     int try_x, int try_y, int *p_moved)
 {
     tile_type_t tile;
@@ -67,8 +68,9 @@ static int try_step(monster_t *p_monster, map_t *p_map,
             return 0;
 
         case TILE_PLAYER:
-            /* Attack attempt: monster stays, Phase 4 handles damage */
-            *p_moved = 1; /* counts as "acted" */
+            /* Attack: monster stays in place, damage applied in Phase 4 */
+            (void)p_player; /* suppress unused warning until Phase 4 */
+            *p_moved = 1;   /* counts as "acted" */
             return 0;
 
         default:
@@ -77,7 +79,7 @@ static int try_step(monster_t *p_monster, map_t *p_map,
     }
 }
 
-int monster_step(monster_t *p_monster, const player_t *p_player,
+int monster_step(monster_t *p_monster, player_t *p_player,
                  map_t *p_map)
 {
     int dx;
@@ -128,7 +130,7 @@ int monster_step(monster_t *p_monster, const player_t *p_player,
     }
 
     /* Try primary axis */
-    if (try_step(p_monster, p_map, prim_x, prim_y, &moved) != 0) {
+    if (try_step(p_monster, p_player, p_map, prim_x, prim_y, &moved) != 0) {
         return -1;
     }
     if (moved) {
@@ -139,7 +141,7 @@ int monster_step(monster_t *p_monster, const player_t *p_player,
     if (sec_x == p_monster->x && sec_y == p_monster->y) {
         return 0; /* no secondary option (dy==0 or dx==0) */
     }
-    if (try_step(p_monster, p_map, sec_x, sec_y, &moved) != 0) {
+    if (try_step(p_monster, p_player, p_map, sec_x, sec_y, &moved) != 0) {
         return -1;
     }
 

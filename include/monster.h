@@ -62,7 +62,7 @@ int monster_init(monster_t *p_monster, int x, int y);
  *   - If both axes are blocked the monster stays in place (return 0).
  *
  * When the target cell contains TILE_PLAYER the monster performs an
- * attack attempt and stays in its current cell (Phase 4 handles damage).
+ * attack: p_player->hp -= p_monster->atk, and the monster stays in place.
  *
  * Map tiles are updated on a successful move:
  *   old position → TILE_FLOOR, new position → TILE_MONSTER.
@@ -72,7 +72,7 @@ int monster_init(monster_t *p_monster, int x, int y);
  * @param p_map      Current map (read/write); must not be NULL.
  * @return 0 (acted), 1 (blocked), -1 (error).
  */
-int monster_step(monster_t *p_monster, const player_t *p_player,
+int monster_step(monster_t *p_monster, player_t *p_player,
                  map_t *p_map);
 
 #endif /* MONSTER_H */

@@ -206,6 +206,17 @@ int turn_manager_spawn_row(game_state_t *p_state)
     return count;
 }
 
+int turn_manager_open_chest(game_state_t *p_state, int x, int y)
+{
+    if (p_state == NULL) {
+        return -1;
+    }
+    /* Stub: Phase 4 Green implements reward and tile removal */
+    (void)x;
+    (void)y;
+    return 0;
+}
+
 int turn_manager_alive_count(const game_state_t *p_state)
 {
     int i;

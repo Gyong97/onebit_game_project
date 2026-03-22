@@ -8,9 +8,11 @@
  * purely the contract.
  *
  * Movement return codes:
- *   0  — player successfully moved (or scroll occurred at top)
- *   1  — move was blocked (wall, viewport boundary)
- *  -1  — error (NULL pointer argument)
+ *   0                  — player successfully moved (or scroll occurred at top)
+ *   1                  — move was blocked (wall, viewport boundary)
+ *   PLAYER_MOVE_ATTACK — player stepped into a monster (attack triggered)
+ *   PLAYER_MOVE_CHEST  — player stepped into a chest (open triggered)
+ *  -1                  — error (NULL pointer argument)
  */
 #ifndef PLAYER_H
 #define PLAYER_H
@@ -22,6 +24,10 @@
 #define PLAYER_INIT_HP    100
 #define PLAYER_INIT_MAXHP 100
 #define PLAYER_INIT_ATK    10
+
+/* Extended movement return codes (values > 1) */
+#define PLAYER_MOVE_ATTACK 2  /* player bumped into a monster — attack triggered */
+#define PLAYER_MOVE_CHEST  3  /* player bumped into a chest  — open triggered    */
 
 /* Starting position: horizontally centred, second row from bottom */
 #define PLAYER_INIT_X  4
