@@ -59,10 +59,9 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
 
     /*
      * Rule 1: moving up past the top of the viewport triggers a map scroll.
-     *   - Clear player tile at current position before scroll (the row shift
-     *     would otherwise carry TILE_PLAYER down to rows[1]).
-     *   - After scroll a fresh row[0] has been generated; re-place player.
-     *   - Player x/y are unchanged (y stays 0).
+     *   - Clear player tile before scroll (row shift would copy TILE_PLAYER).
+     *   - After scroll rows[0] is fresh; re-place player at y=0.
+     *   - Player x/y unchanged (y stays 0).
      */
     if (new_y < 0) {
         map_set_tile(p_map, old_x, old_y, TILE_FLOOR);
@@ -75,13 +74,12 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
 
     /*
      * Rule 2: moving down past the bottom of the viewport is forbidden.
-     * Those rows have already scrolled off and no longer exist.
      */
     if (new_y >= VIEWPORT_H) {
         return 1; /* blocked */
     }
 
-    /* Horizontal out-of-bounds guard (border walls cover this in practice) */
+    /* Horizontal out-of-bounds guard */
     if (new_x < 0 || new_x >= MAP_WIDTH) {
         return 1; /* blocked */
     }
@@ -93,11 +91,32 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
 
     switch (tile) {
         case TILE_FLOOR:
-            /* Standard move: sync map tiles and update player position */
+        case TILE_COIN:
+            /*
+             * Move to floor or coin tile.
+             * For TILE_COIN the tile is overwritten by TILE_PLAYER (coin
+             * collected; Phase 2 will add coin counter tracking).
+             */
             map_set_tile(p_map, old_x, old_y, TILE_FLOOR);
             p_player->x = new_x;
             p_player->y = new_y;
             map_set_tile(p_map, new_x, new_y, TILE_PLAYER);
+
+            /*
+             * 5-Buffer scroll rule (ACTION_MOVE_UP only):
+             * If the player has entered the buffer zone (y < SCROLL_BUFFER),
+             * fire a scroll immediately.  The scroll shifts all rows down by
+             * one, so player.y is incremented to compensate, keeping the
+             * player at the buffer boundary in viewport coordinates.
+             */
+            if (action == ACTION_MOVE_UP && p_player->y < SCROLL_BUFFER) {
+                map_set_tile(p_map, p_player->x, p_player->y, TILE_FLOOR);
+                if (map_scroll(p_map) != 0) {
+                    return -1;
+                }
+                p_player->y++;
+                map_set_tile(p_map, p_player->x, p_player->y, TILE_PLAYER);
+            }
             return 0;
 
         case TILE_WALL:
@@ -106,14 +125,12 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
         case TILE_MONSTER:
             /*
              * Attack: player stays in place, turn_manager handles HP damage.
-             * Return PLAYER_MOVE_ATTACK so the caller knows to apply damage.
              */
             return PLAYER_MOVE_ATTACK;
 
         case TILE_CHEST:
             /*
-             * Chest interaction: player stays in place, turn_manager opens it.
-             * Return PLAYER_MOVE_CHEST so the caller knows to call open_chest.
+             * Chest interaction: player stays, turn_manager opens it.
              */
             return PLAYER_MOVE_CHEST;
 

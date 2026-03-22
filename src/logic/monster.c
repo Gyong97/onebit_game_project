@@ -59,7 +59,14 @@ static int try_step(monster_t *p_monster, player_t *p_player,
 
     switch (tile) {
         case TILE_FLOOR:
-            /* Move: sync map tiles, update monster position */
+        case TILE_COIN:
+            /*
+             * Move to floor or coin tile.
+             * Monsters pass through coins without collecting them
+             * (TILE_COIN overwritten by TILE_MONSTER on entry,
+             * TILE_FLOOR restored on departure — coin is lost;
+             * Phase 2 will address coin preservation).
+             */
             map_set_tile(p_map, p_monster->x, p_monster->y, TILE_FLOOR);
             p_monster->x = try_x;
             p_monster->y = try_y;

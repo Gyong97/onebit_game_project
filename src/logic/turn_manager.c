@@ -270,6 +270,15 @@ int turn_manager_spawn_row(game_state_t *p_state)
             if (map_get_tile(&p_state->map, x, 0, &tile) == 0
                 && tile == TILE_FLOOR) {
                 map_set_tile(&p_state->map, x, 0, TILE_CHEST);
+                continue;
+            }
+        }
+        /* Coin spawn roll (only on cells that remain TILE_FLOOR) */
+        if (rand() % 100 < COIN_SPAWN_PCT) {
+            tile_type_t tile;
+            if (map_get_tile(&p_state->map, x, 0, &tile) == 0
+                && tile == TILE_FLOOR) {
+                map_set_tile(&p_state->map, x, 0, TILE_COIN);
             }
         }
     }
