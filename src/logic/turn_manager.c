@@ -66,14 +66,61 @@ int turn_manager_init(game_state_t *p_state)
     return 0;
 }
 
+/**
+ * @brief Compute the target cell for the given action from the player's pos.
+ */
+static void compute_target(const player_t *p_player, action_t action,
+                            int *p_tx, int *p_ty)
+{
+    *p_tx = p_player->x;
+    *p_ty = p_player->y;
+    switch (action) {
+        case ACTION_MOVE_UP:    (*p_ty)--; break;
+        case ACTION_MOVE_DOWN:  (*p_ty)++; break;
+        case ACTION_MOVE_LEFT:  (*p_tx)--; break;
+        case ACTION_MOVE_RIGHT: (*p_tx)++; break;
+        default: break;
+    }
+}
+
+/**
+ * @brief Apply player attack to the monster occupying (tx, ty).
+ *
+ * Reduces monster.hp by player.atk. If hp drops to 0 or below, the monster
+ * is killed (alive = 0) and its tile is cleared to TILE_FLOOR.
+ */
+static void apply_player_attack(game_state_t *p_state, int tx, int ty)
+{
+    int i;
+
+    for (i = 0; i < MONSTER_MAX_COUNT; i++) {
+        if (!p_state->monsters[i].alive) {
+            continue;
+        }
+        if (p_state->monsters[i].x == tx && p_state->monsters[i].y == ty) {
+            p_state->monsters[i].hp -= p_state->player.atk;
+            if (p_state->monsters[i].hp <= 0) {
+                p_state->monsters[i].alive = 0;
+                map_set_tile(&p_state->map, tx, ty, TILE_FLOOR);
+            }
+            break;
+        }
+    }
+}
+
 int turn_manager_player_act(game_state_t *p_state, action_t action)
 {
     long prev_scroll;
     int  move_result;
+    int  tx;
+    int  ty;
 
     if (p_state == NULL) {
         return -1;
     }
+
+    /* Pre-compute the target tile so we can act on it after player_move */
+    compute_target(&p_state->player, action, &tx, &ty);
 
     prev_scroll = p_state->map.scroll_count;
     move_result = player_move(&p_state->player, action, &p_state->map);
@@ -85,16 +132,30 @@ int turn_manager_player_act(game_state_t *p_state, action_t action)
         return 1;  /* player blocked — no monster turn */
     }
 
-    /* Player acted (moved or scrolled) */
-    if (p_state->map.scroll_count > prev_scroll) {
-        /* Scroll detected: shift all monsters down, spawn new ones */
-        if (turn_manager_shift_monsters(p_state) != 0) return -1;
-        if (turn_manager_spawn_row(p_state) < 0)      return -1;
+    /* Handle special player actions before monster turn */
+    if (move_result == PLAYER_MOVE_ATTACK) {
+        apply_player_attack(p_state, tx, ty);
+        /* fall through to monster turn */
+    } else if (move_result == PLAYER_MOVE_CHEST) {
+        if (turn_manager_open_chest(p_state, tx, ty) != 0) {
+            return -1;
+        }
+        /* fall through to monster turn */
     }
 
-    /* Trigger monster turn */
+    /* Player moved or acted: handle scroll then run monster turn */
+    if (p_state->map.scroll_count > prev_scroll) {
+        if (turn_manager_shift_monsters(p_state) != 0) return -1;
+        if (turn_manager_spawn_row(p_state) < 0)       return -1;
+    }
+
     if (turn_manager_monsters_act(p_state) != 0) {
         return -1;
+    }
+
+    /* Check game-over condition after monsters have acted */
+    if (p_state->player.hp <= 0) {
+        return TURN_GAME_OVER;
     }
 
     return 0;
@@ -200,6 +261,15 @@ int turn_manager_spawn_row(game_state_t *p_state)
         if (rand() % 100 < MONSTER_SPAWN_PCT) {
             if (turn_manager_spawn_monster(p_state, x, 0) == 0) {
                 count++;
+                continue; /* cell occupied by monster — skip chest roll */
+            }
+        }
+        /* Chest spawn roll (only on cells that remain TILE_FLOOR) */
+        if (rand() % 100 < CHEST_SPAWN_PCT) {
+            tile_type_t tile;
+            if (map_get_tile(&p_state->map, x, 0, &tile) == 0
+                && tile == TILE_FLOOR) {
+                map_set_tile(&p_state->map, x, 0, TILE_CHEST);
             }
         }
     }
@@ -211,9 +281,19 @@ int turn_manager_open_chest(game_state_t *p_state, int x, int y)
     if (p_state == NULL) {
         return -1;
     }
-    /* Stub: Phase 4 Green implements reward and tile removal */
-    (void)x;
-    (void)y;
+
+    /* Random reward: 50 % HP, 50 % ATK */
+    if (rand() % 2 == 0) {
+        p_state->player.hp += CHEST_HP_REWARD;
+        if (p_state->player.hp > p_state->player.max_hp) {
+            p_state->player.hp = p_state->player.max_hp;
+        }
+    } else {
+        p_state->player.atk += CHEST_ATK_REWARD;
+    }
+
+    /* Remove chest tile */
+    map_set_tile(&p_state->map, x, y, TILE_FLOOR);
     return 0;
 }
 

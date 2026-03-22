@@ -68,9 +68,9 @@ static int try_step(monster_t *p_monster, player_t *p_player,
             return 0;
 
         case TILE_PLAYER:
-            /* Attack: monster stays in place, damage applied in Phase 4 */
-            (void)p_player; /* suppress unused warning until Phase 4 */
-            *p_moved = 1;   /* counts as "acted" */
+            /* Attack: monster stays in place, deals damage to player */
+            p_player->hp -= p_monster->atk;
+            *p_moved = 1; /* counts as "acted" */
             return 0;
 
         default:

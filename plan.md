@@ -25,7 +25,11 @@
 - [x] `src/logic/monster.c` 구현: 추적 AI (|dx|≥|dy| 시 가로 우선, 차단 시 세로 대체)
 - [x] `src/logic/turn_manager.c` 구현: 플레이어 행동→몬스터 행동 게임 루프, 스크롤 감지 후 몬스터 하강/소멸, 신규 행에 MONSTER_SPAWN_PCT 확률 스폰
 
-## [ ] 4단계: 전투 및 아이템 시스템
-- [ ] 플레이어와 몬스터 좌표 중첩 시 전투(체력 차감)가 발생하는 로직 (TDD)
-- [ ] 맵 상에 상자(Chest) 배치 및 충돌 시 아이템 획득 처리
-- [ ] 아이템 장착에 따른 플레이어 공격력/최대 체력 증가 스탯 반영
+## [x] 4단계: 전투 및 아이템 시스템
+- [x] `include/player.h` 수정: PLAYER_MOVE_ATTACK(2), PLAYER_MOVE_CHEST(3) 반환 코드 상수 추가
+- [x] `include/monster.h` 수정: monster_step 시그니처 `const player_t*` → `player_t*` (데미지 적용 위해)
+- [x] `include/turn_manager.h` 수정: TURN_GAME_OVER(2), CHEST_* 상수, turn_manager_open_chest 선언 추가
+- [x] `tests/test_combat.c` 실패 테스트 먼저 작성: 플레이어→몬스터 공격/사망, 몬스터→플레이어 공격, 게임오버, 상자 상호작용
+- [x] `src/logic/player.c` 수정: TILE_MONSTER → PLAYER_MOVE_ATTACK, TILE_CHEST → PLAYER_MOVE_CHEST 반환
+- [x] `src/logic/monster.c` 수정: try_step() TILE_PLAYER 시 player.hp -= monster.atk 실제 데미지 적용
+- [x] `src/logic/turn_manager.c` 수정: PLAYER_MOVE_ATTACK 처리(몬스터 탐색·데미지·사망), PLAYER_MOVE_CHEST 처리(보상·타일 제거), monster_acts 후 player.hp ≤ 0 → TURN_GAME_OVER, spawn_row에 CHEST_SPAWN_PCT 확률 상자 스폰 추가

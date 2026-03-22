@@ -105,12 +105,19 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
 
         case TILE_MONSTER:
             /*
-             * Attack attempt: player stays in place but the action counts
-             * (monsters will get their turn).  Phase 4 adds HP damage.
+             * Attack: player stays in place, turn_manager handles HP damage.
+             * Return PLAYER_MOVE_ATTACK so the caller knows to apply damage.
              */
-            return 0;
+            return PLAYER_MOVE_ATTACK;
+
+        case TILE_CHEST:
+            /*
+             * Chest interaction: player stays in place, turn_manager opens it.
+             * Return PLAYER_MOVE_CHEST so the caller knows to call open_chest.
+             */
+            return PLAYER_MOVE_CHEST;
 
         default:
-            return 1; /* blocked (TILE_CHEST handled in Phase 4) */
+            return 1; /* blocked */
     }
 }
