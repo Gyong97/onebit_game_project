@@ -24,7 +24,8 @@ typedef enum {
     TILE_WALL    = 1, /* '#' impassable border/obstacle */
     TILE_PLAYER  = 2, /* 'P' player entity */
     TILE_MONSTER = 3, /* 'M' monster entity */
-    TILE_CHEST   = 4  /* 'C' chest object */
+    TILE_CHEST   = 4, /* 'C' chest object */
+    TILE_COIN    = 5  /* '$' collectible coin */
 } tile_type_t;
 
 /**

@@ -82,10 +82,11 @@ static int test_player_move_up(void)
     TEST_ASSERT(player_init(&p) == 0, "player_init should return 0");
     TEST_ASSERT(make_map(&map) == 0,  "map_init should return 0");
     p.x = 4;
-    p.y = 5; /* somewhere in the middle */
+    p.y = 7; /* below buffer zone — move up should not trigger scroll */
+    map_set_tile(&map, 4, 7, TILE_PLAYER);
     TEST_ASSERT(player_move(&p, ACTION_MOVE_UP, &map) == 0,
                 "move up on floor should return 0");
-    TEST_ASSERT(p.y == 4, "y must decrease by 1 after move up");
+    TEST_ASSERT(p.y == 6, "y must decrease by 1 after move up");
     TEST_ASSERT(p.x == 4, "x must not change after move up");
     return 0;
 }
@@ -224,6 +225,73 @@ static int test_player_scroll_multiple(void)
     return 0;
 }
 
+/* ── Test cases: 5-buffer scroll ─────────────────────────────────────── */
+
+/*
+ * 5-buffer rule: when player moves UP and lands in the buffer zone
+ * (new_y < SCROLL_BUFFER), map_scroll() fires automatically and
+ * player.y is pushed back up to SCROLL_BUFFER.
+ *
+ * Setup: player at y=SCROLL_BUFFER (=5). Target y=4 (<5 — buffer zone).
+ * Expected: scroll fires (scroll_count+1), player.y == SCROLL_BUFFER (5).
+ */
+static int test_player_5buffer_scroll_triggers(void)
+{
+    player_t p;
+    map_t    map;
+    long     prev_scroll;
+
+    TEST_ASSERT(player_init(&p) == 0, "player_init should return 0");
+    TEST_ASSERT(make_map(&map) == 0,  "map_init should return 0");
+    p.x = 4;
+    p.y = SCROLL_BUFFER; /* y=5 — one step above buffer zone */
+    map_set_tile(&map, 4, SCROLL_BUFFER, TILE_PLAYER);
+    prev_scroll = map.scroll_count;
+
+    TEST_ASSERT(player_move(&p, ACTION_MOVE_UP, &map) == 0,
+                "moving into buffer zone must return 0");
+    TEST_ASSERT(map.scroll_count == prev_scroll + 1,
+                "5-buffer scroll must fire when player enters buffer zone");
+    TEST_ASSERT(p.y == SCROLL_BUFFER,
+                "player y must be restored to SCROLL_BUFFER after 5-buffer scroll");
+    return 0;
+}
+
+/* ── Test cases: TILE_COIN passability ───────────────────────────────── */
+
+/*
+ * Player moving onto a TILE_COIN must succeed (return 0), player moves
+ * to the coin tile, coin tile becomes TILE_PLAYER, old tile becomes
+ * TILE_FLOOR.
+ *
+ * Uses y=7 → y=6 (both >= SCROLL_BUFFER=5) to avoid triggering 5-buffer.
+ */
+static int test_player_coin_walkable(void)
+{
+    player_t    p;
+    map_t       map;
+    tile_type_t tile;
+
+    TEST_ASSERT(player_init(&p) == 0, "player_init should return 0");
+    TEST_ASSERT(make_map(&map) == 0,  "map_init should return 0");
+    p.x = 4;
+    p.y = 7;
+    map_set_tile(&map, 4, 7, TILE_PLAYER);
+    map_set_tile(&map, 4, 6, TILE_COIN); /* coin directly above player */
+
+    TEST_ASSERT(player_move(&p, ACTION_MOVE_UP, &map) == 0,
+                "stepping onto TILE_COIN must return 0 (passable)");
+    TEST_ASSERT(p.y == 6,
+                "player must move to coin tile position");
+    TEST_ASSERT(map_get_tile(&map, 4, 6, &tile) == 0, "get tile must succeed");
+    TEST_ASSERT(tile == TILE_PLAYER,
+                "coin tile must become TILE_PLAYER after collection");
+    TEST_ASSERT(map_get_tile(&map, 4, 7, &tile) == 0, "get old tile must succeed");
+    TEST_ASSERT(tile == TILE_FLOOR,
+                "old player tile must become TILE_FLOOR after move");
+    return 0;
+}
+
 /* ── Test cases: null pointer safety ─────────────────────────────────── */
 
 static int test_player_move_null_player(void)
@@ -271,6 +339,8 @@ int main(void)
         { "test_player_blocked_at_viewport_bottom", test_player_blocked_at_viewport_bottom },
         { "test_player_scroll_at_top",              test_player_scroll_at_top              },
         { "test_player_scroll_multiple",            test_player_scroll_multiple            },
+        { "test_player_5buffer_scroll_triggers",    test_player_5buffer_scroll_triggers    },
+        { "test_player_coin_walkable",              test_player_coin_walkable              },
         { "test_player_move_null_player",           test_player_move_null_player           },
         { "test_player_move_null_map",              test_player_move_null_map              },
     };

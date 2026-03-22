@@ -308,6 +308,41 @@ static int test_monster_step_null_monster(void)
     return 0;
 }
 
+/*
+ * Monster must treat TILE_COIN as passable (move onto it, overwriting the
+ * coin with TILE_MONSTER; spec: monsters can pass through coin cells).
+ *
+ * Monster at (4,5), player at (4,8). Coin at (4,6) in monster's path.
+ * dy=3, dx=0 → vertical primary → tries (4,6)=TILE_COIN → must move.
+ */
+static int test_monster_step_passes_through_coin(void)
+{
+    map_t     map;
+    monster_t m;
+    player_t  p;
+    tile_type_t tile;
+
+    map_init(&map);
+    player_init(&p);
+    p.x = 4; p.y = 8;
+    monster_init(&m, 4, 5);
+    map_set_tile(&map, 4, 8, TILE_PLAYER);
+    map_set_tile(&map, 4, 5, TILE_MONSTER);
+    map_set_tile(&map, 4, 6, TILE_COIN); /* coin in monster's direct path */
+
+    TEST_ASSERT(monster_step(&m, &p, &map) == 0,
+                "monster_step must return 0 when stepping onto TILE_COIN");
+    TEST_ASSERT(m.y == 6,
+                "monster must move to TILE_COIN position");
+    TEST_ASSERT(map_get_tile(&map, 4, 6, &tile) == 0, "get new tile must succeed");
+    TEST_ASSERT(tile == TILE_MONSTER,
+                "monster tile must be at new position (TILE_COIN overwritten)");
+    TEST_ASSERT(map_get_tile(&map, 4, 5, &tile) == 0, "get old tile must succeed");
+    TEST_ASSERT(tile == TILE_FLOOR,
+                "old monster position must become TILE_FLOOR");
+    return 0;
+}
+
 static int test_monster_step_null_player(void)
 {
     map_t    map;
@@ -359,6 +394,7 @@ int main(void)
         { "test_monster_step_updates_map_tiles",               test_monster_step_updates_map_tiles               },
         { "test_monster_step_reduces_distance",                test_monster_step_reduces_distance                },
         { "test_monster_step_null_monster",                    test_monster_step_null_monster                    },
+        { "test_monster_step_passes_through_coin",             test_monster_step_passes_through_coin             },
         { "test_monster_step_null_player",                     test_monster_step_null_player                     },
         { "test_monster_step_null_map",                        test_monster_step_null_map                        },
     };

@@ -24,10 +24,11 @@
 /* ── Turn result codes ────────────────────────────────────────────────── */
 #define TURN_GAME_OVER   2   /* player HP reached 0 — game ends           */
 
-/* ── Chest reward constants ───────────────────────────────────────────── */
+/* ── Spawn constants ─────────────────────────────────────────────────── */
 #define CHEST_SPAWN_PCT  15  /* % chance per interior column on new row   */
 #define CHEST_HP_REWARD  20  /* HP healed when opening a chest            */
 #define CHEST_ATK_REWARD  5  /* ATK gained when opening a chest           */
+#define COIN_SPAWN_PCT   15  /* % chance per floor cell to spawn a coin   */
 
 #include "monster.h"       /* monster_t, MONSTER_MAX_COUNT */
 #include "player.h"        /* player_t */

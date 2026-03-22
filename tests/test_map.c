@@ -9,6 +9,7 @@
  * Return convention: 0 = pass, -1 = fail.
  */
 #include <stdio.h>
+#include <stdlib.h>  /* srand */
 #include "map.h"
 
 /* ── Minimal test framework ───────────────────────────────────────────── */
@@ -111,19 +112,55 @@ static int test_map_scroll_new_top_row_has_walls(void)
     return 0;
 }
 
-/* map_scroll: new top row interior must be passable (TILE_FLOOR) */
+/* map_scroll: new top row interior must contain only valid terrain tiles */
 static int test_map_scroll_new_top_row_interior_floor(void)
 {
     map_t map;
     tile_type_t tile;
+    int c;
 
     TEST_ASSERT(map_init(&map) == 0, "map_init should return 0");
     TEST_ASSERT(map_scroll(&map) == 0, "map_scroll should return 0");
 
-    TEST_ASSERT(map_get_tile(&map, MAP_WIDTH / 2, 0, &tile) == 0,
-                "map_get_tile new top-centre should succeed");
-    TEST_ASSERT(tile == TILE_FLOOR,
-                "new top row centre must be TILE_FLOOR after scroll");
+    /* Interior cells must be terrain only — never an entity or coin */
+    for (c = 1; c < MAP_WIDTH - 1; c++) {
+        TEST_ASSERT(map_get_tile(&map, c, 0, &tile) == 0,
+                    "map_get_tile new top interior should succeed");
+        TEST_ASSERT(tile == TILE_FLOOR || tile == TILE_WALL,
+                    "new top row interior must be TILE_FLOOR or TILE_WALL");
+        TEST_ASSERT(tile != TILE_PLAYER && tile != TILE_MONSTER,
+                    "new top row interior must not contain entities");
+    }
+    return 0;
+}
+
+/* map_scroll: with enough scrolls, internal obstacle walls must appear */
+static int test_map_scroll_generates_obstacles(void)
+{
+    map_t       map;
+    tile_type_t tile;
+    int         s;
+    int         c;
+    int         found_wall;
+
+    srand(42); /* deterministic seed */
+    TEST_ASSERT(map_init(&map) == 0, "map_init should return 0");
+
+    found_wall = 0;
+    for (s = 0; s < 50 && !found_wall; s++) {
+        TEST_ASSERT(map_scroll(&map) == 0, "map_scroll should return 0");
+        for (c = 1; c < MAP_WIDTH - 1; c++) {
+            TEST_ASSERT(map_get_tile(&map, c, 0, &tile) == 0,
+                        "map_get_tile should succeed");
+            if (tile == TILE_WALL) {
+                found_wall = 1;
+                break;
+            }
+        }
+    }
+
+    TEST_ASSERT(found_wall,
+                "map_scroll must generate internal TILE_WALL obstacles with OBSTACLE_SPAWN_PCT > 0");
     return 0;
 }
 
@@ -243,6 +280,7 @@ int main(void)
         { "test_map_scroll_increments_count",        test_map_scroll_increments_count        },
         { "test_map_scroll_new_top_row_has_walls",   test_map_scroll_new_top_row_has_walls   },
         { "test_map_scroll_new_top_row_interior_floor", test_map_scroll_new_top_row_interior_floor },
+        { "test_map_scroll_generates_obstacles",     test_map_scroll_generates_obstacles     },
         { "test_map_scroll_old_row_shifts_down",     test_map_scroll_old_row_shifts_down     },
         { "test_map_get_tile_null_map",              test_map_get_tile_null_map              },
         { "test_map_get_tile_oob_x",                 test_map_get_tile_oob_x                 },

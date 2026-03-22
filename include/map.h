@@ -21,6 +21,9 @@
 /* VIEWPORT_H is the same as MAP_HEIGHT — alias for semantic clarity */
 #define VIEWPORT_H MAP_HEIGHT
 
+/* Procedural generation: % chance per interior cell for an internal wall */
+#define OBSTACLE_SPAWN_PCT 15
+
 /**
  * @brief In-memory representation of the visible map window.
  */
