@@ -16,14 +16,14 @@
 - [x] `src/logic/map.c` 구현: 뷰포트 스크롤(위로 이동 시 하단 1줄 소멸, 상단에 새 줄 생성), 절차적 행 생성
 - [x] `src/logic/player.c` 구현: WASD 이동, 벽 충돌, 뷰포트 상단 도달 시 맵 스크롤 트리거, 하단 후진 차단
 
-## [ ] 3단계: 몬스터 AI 및 턴제 시스템
-- [ ] `include/monster.h` 정의: `monster_t`(HP 20/Atk 5/alive 플래그) 및 API (TDD)
-- [ ] `include/turn_manager.h` 정의: `game_state_t`(map+player+monsters 통합) 및 턴 제어 API
-- [ ] `tests/test_monster.c` 실패 테스트 먼저 작성: 초기화, 추적 AI, 벽 충돌 검증
-- [ ] `tests/test_turn.c` 실패 테스트 먼저 작성: 플레이어 행동 후 몬스터 거리 단축 검증, 스크롤 연동
-- [ ] `src/logic/player.c` 수정: 이동/스크롤 시 맵 타일(TILE_PLAYER) 동기화
-- [ ] `src/logic/monster.c` 구현: 추적 AI (|dx|≥|dy| 시 가로 우선, 차단 시 세로 대체)
-- [ ] `src/logic/turn_manager.c` 구현: 플레이어 행동→몬스터 행동 게임 루프, 스크롤 감지 후 몬스터 하강/소멸, 신규 행에 MONSTER_SPAWN_PCT 확률 스폰
+## [x] 3단계: 몬스터 AI 및 턴제 시스템
+- [x] `include/monster.h` 정의: `monster_t`(HP 20/Atk 5/alive 플래그) 및 API (TDD)
+- [x] `include/turn_manager.h` 정의: `game_state_t`(map+player+monsters 통합) 및 턴 제어 API
+- [x] `tests/test_monster.c` 실패 테스트 먼저 작성: 초기화, 추적 AI, 벽 충돌 검증
+- [x] `tests/test_turn.c` 실패 테스트 먼저 작성: 플레이어 행동 후 몬스터 거리 단축 검증, 스크롤 연동
+- [x] `src/logic/player.c` 수정: 이동/스크롤 시 맵 타일(TILE_PLAYER) 동기화
+- [x] `src/logic/monster.c` 구현: 추적 AI (|dx|≥|dy| 시 가로 우선, 차단 시 세로 대체)
+- [x] `src/logic/turn_manager.c` 구현: 플레이어 행동→몬스터 행동 게임 루프, 스크롤 감지 후 몬스터 하강/소멸, 신규 행에 MONSTER_SPAWN_PCT 확률 스폰
 
 ## [ ] 4단계: 전투 및 아이템 시스템
 - [ ] 플레이어와 몬스터 좌표 중첩 시 전투(체력 차감)가 발생하는 로직 (TDD)

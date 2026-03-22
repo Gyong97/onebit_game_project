@@ -274,7 +274,11 @@ static int test_turn_monster_tracks_player(void)
 
 /* ── Scroll integration tests ────────────────────────────────────────── */
 
-/* After scroll, a monster at the bottom row (VIEWPORT_H-1) must be removed */
+/*
+ * After shift, a monster that was at VIEWPORT_H-1 must have alive==0.
+ * Tests turn_manager_shift_monsters() directly to avoid spawn_row()
+ * potentially re-using the freed slot before we can inspect it.
+ */
 static int test_turn_scroll_removes_monster_at_bottom(void)
 {
     game_state_t state;
@@ -286,19 +290,14 @@ static int test_turn_scroll_removes_monster_at_bottom(void)
     TEST_ASSERT(turn_manager_spawn_monster(&state, 4, VIEWPORT_H - 1) == 0,
                 "spawn_monster at bottom row should return 0");
     TEST_ASSERT(state.monsters[0].alive != 0,
-                "monster must be alive before scroll");
+                "monster must be alive before shift");
 
-    /* Teleport player to y=0 (direct test manipulation to trigger scroll) */
-    map_set_tile(&state.map, state.player.x, state.player.y, TILE_FLOOR);
-    state.player.y = 0;
-    map_set_tile(&state.map, state.player.x, 0, TILE_PLAYER);
-
-    /* Player moves up → scroll triggered */
-    TEST_ASSERT(turn_manager_player_act(&state, ACTION_MOVE_UP) == 0,
-                "player_act(UP) from y=0 must scroll and return 0");
+    /* Call shift directly (no spawn_row, no monsters_act — clean isolation) */
+    TEST_ASSERT(turn_manager_shift_monsters(&state) == 0,
+                "turn_manager_shift_monsters should return 0");
 
     TEST_ASSERT(state.monsters[0].alive == 0,
-                "monster at viewport bottom must be removed after scroll");
+                "monster shifted past viewport bottom must be removed (alive==0)");
     return 0;
 }
 
