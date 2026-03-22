@@ -48,3 +48,42 @@
 * `render_frame_t.tiles[VIEWPORT_H][MAP_WIDTH]`는 항상 현재 뷰포트 스냅샷
 * `render_frame_t.scroll_count`를 HUD에 표시하여 탐험 거리 제공
 * 로직 레이어는 매 턴 `map_t`에서 `render_frame_t`로 타일을 복사하여 전달
+
+## 4. 몬스터 AI 및 턴제 시스템 설계
+
+### 4.1 엔티티 관리 원칙
+* **맵 타일 일원화:** 모든 엔티티(플레이어, 몬스터)의 위치는 `map_t.rows`에 항상 반영된다. 이동 시 이전 위치를 `TILE_FLOOR`로 복원한 뒤 새 위치에 해당 타일을 기록한다.
+* **몬스터 풀:** `game_state_t` 내 고정 크기 배열(`monsters[MONSTER_MAX_COUNT]`)로 관리. `alive` 플래그로 슬롯 재사용. 동적 할당 없음.
+
+### 4.2 모듈 역할 분리
+| 모듈 | 역할 |
+|---|---|
+| `map.c` | 지형(벽/바닥) 생성·스크롤. 엔티티 비인식. |
+| `player.c` | 플레이어 이동 + `TILE_PLAYER` 맵 동기화 |
+| `monster.c` | 단일 몬스터 추적 AI + `TILE_MONSTER` 맵 동기화 |
+| `turn_manager.c` | 턴 오케스트레이터: 플레이어 행동→스크롤 감지→몬스터 하강/스폰→몬스터 행동 |
+
+### 4.3 턴 처리 흐름 (`turn_manager_player_act`)
+```
+1. scroll_count 저장 (prev_scroll)
+2. player_move() 호출
+   ├─ 반환 1 (차단): 즉시 반환 1 (몬스터 행동 없음)
+   └─ 반환 0 (이동/스크롤):
+       ├─ scroll_count > prev_scroll 이면:
+       │   a. 모든 생존 몬스터 y += 1
+       │   b. y >= VIEWPORT_H 인 몬스터 alive=0 (소멸)
+       │   c. 새 y=0 행에 MONSTER_SPAWN_PCT 확률 스폰
+       └─ turn_manager_monsters_act() 호출
+3. 반환 0
+```
+
+### 4.4 몬스터 추적 AI (`monster_step`)
+* 이동 우선순위: `|dx| ≥ |dy|` 이면 가로 우선, 그 외 세로 우선
+* 1차 축 차단 시 2차 축으로 대체 시도
+* 이동 대상 = `TILE_PLAYER`: 공격 시도(Phase 4 데미지 처리), 몬스터는 현 위치 유지
+* 이동 대상 = `TILE_WALL`/`TILE_MONSTER`: 차단
+
+### 4.5 스크롤 시 몬스터 스폰
+* `map_scroll()` 호출 후 `turn_manager`가 새 y=0 행을 스캔
+* 각 내부 열(x=1..MAP_WIDTH-2)에 대해 `rand() % 100 < MONSTER_SPAWN_PCT` 이면 스폰
+* 몬스터 풀이 가득 찬 경우 스폰 생략

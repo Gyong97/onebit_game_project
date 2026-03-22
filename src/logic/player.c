@@ -4,9 +4,12 @@
  *
  * Handles initialisation and movement including:
  *   - WASD directional movement within the viewport
- *   - Wall tile collision (blocked → return 1)
+ *   - Map tile synchronisation: TILE_PLAYER is kept in sync with player pos
+ *   - Wall and entity tile collision (TILE_WALL → blocked)
+ *   - TILE_MONSTER collision → attack attempt (Phase 4 handles damage);
+ *     counted as a player action so monster turn proceeds
  *   - No-backtrack enforcement at the viewport bottom (blocked → return 1)
- *   - Scroll trigger when moving up from y=0 (map_scroll + return 0)
+ *   - Scroll trigger when moving up from y=0 (map_scroll + tile sync)
  *
  * No stdio output: pure game-logic module per architecture constraints.
  */
@@ -30,6 +33,8 @@ int player_init(player_t *p_player)
 
 int player_move(player_t *p_player, action_t action, map_t *p_map)
 {
+    int old_x;
+    int old_y;
     int new_x;
     int new_y;
     tile_type_t tile;
@@ -38,8 +43,10 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
         return -1;
     }
 
-    new_x = p_player->x;
-    new_y = p_player->y;
+    old_x = p_player->x;
+    old_y = p_player->y;
+    new_x = old_x;
+    new_y = old_y;
 
     switch (action) {
         case ACTION_MOVE_UP:    new_y--; break;
@@ -52,10 +59,18 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
 
     /*
      * Rule 1: moving up past the top of the viewport triggers a map scroll.
-     * Player stays at y=0 on the freshly generated row.
+     *   - Clear player tile at current position before scroll (the row shift
+     *     would otherwise carry TILE_PLAYER down to rows[1]).
+     *   - After scroll a fresh row[0] has been generated; re-place player.
+     *   - Player x/y are unchanged (y stays 0).
      */
     if (new_y < 0) {
-        return map_scroll(p_map); /* 0 on success, -1 on error */
+        map_set_tile(p_map, old_x, old_y, TILE_FLOOR);
+        if (map_scroll(p_map) != 0) {
+            return -1;
+        }
+        map_set_tile(p_map, p_player->x, 0, TILE_PLAYER);
+        return 0;
     }
 
     /*
@@ -66,31 +81,36 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
         return 1; /* blocked */
     }
 
-    /* Horizontal out-of-bounds guard (walls cover these, but be safe) */
+    /* Horizontal out-of-bounds guard (border walls cover this in practice) */
     if (new_x < 0 || new_x >= MAP_WIDTH) {
         return 1; /* blocked */
     }
 
-    /* Rule 3 & 4: inspect the target tile */
+    /* Inspect the target tile */
     if (map_get_tile(p_map, new_x, new_y, &tile) != 0) {
         return -1; /* map access error */
     }
 
     switch (tile) {
         case TILE_FLOOR:
+            /* Standard move: sync map tiles and update player position */
+            map_set_tile(p_map, old_x, old_y, TILE_FLOOR);
             p_player->x = new_x;
             p_player->y = new_y;
-            return 0; /* moved successfully */
+            map_set_tile(p_map, new_x, new_y, TILE_PLAYER);
+            return 0;
 
         case TILE_WALL:
             return 1; /* blocked */
 
-        /*
-         * TILE_MONSTER → attack (Phase 3)
-         * TILE_CHEST   → interact (Phase 4)
-         * Until those phases are implemented, treat as blocked.
-         */
+        case TILE_MONSTER:
+            /*
+             * Attack attempt: player stays in place but the action counts
+             * (monsters will get their turn).  Phase 4 adds HP damage.
+             */
+            return 0;
+
         default:
-            return 1;
+            return 1; /* blocked (TILE_CHEST handled in Phase 4) */
     }
 }
