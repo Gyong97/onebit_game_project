@@ -13,6 +13,7 @@
 #include "renderer.h"
 #include "input.h"
 #include "turn_manager.h"
+#include "player.h"   /* EQUIP_SLOT_* */
 
 /* ── Helpers ──────────────────────────────────────────────────────────── */
 
@@ -34,11 +35,34 @@ static void build_frame(const game_state_t *p_state, render_frame_t *p_frame)
             p_frame->tiles[r][c] = p_state->map.rows[r][c];
         }
     }
-    p_frame->player_hp    = p_state->player.hp;
-    p_frame->player_max_hp = p_state->player.max_hp;
-    p_frame->player_atk   = p_state->player.atk;
-    p_frame->scroll_count  = p_state->map.scroll_count;
-    p_frame->message[0]   = '\0';
+    const player_t *pl = &p_state->player;
+    int             slot;
+    const char     *name;
+
+    p_frame->player_hp      = pl->hp;
+    p_frame->player_max_hp  = pl->max_hp;
+    p_frame->player_atk     = pl->atk;
+    p_frame->player_def     = pl->def;
+    p_frame->player_coins   = pl->coins;
+    p_frame->inventory_count = pl->inventory_count;
+    p_frame->scroll_count   = p_state->map.scroll_count;
+    p_frame->message[0]     = '\0';
+
+    /* Equipment slot names */
+    slot = pl->equipment[EQUIP_SLOT_WEAPON];
+    name = (slot != -1) ? pl->inventory[slot].name : "";
+    strncpy(p_frame->equip_weapon, name, EQUIP_NAME_MAX - 1);
+    p_frame->equip_weapon[EQUIP_NAME_MAX - 1] = '\0';
+
+    slot = pl->equipment[EQUIP_SLOT_HEAD];
+    name = (slot != -1) ? pl->inventory[slot].name : "";
+    strncpy(p_frame->equip_head, name, EQUIP_NAME_MAX - 1);
+    p_frame->equip_head[EQUIP_NAME_MAX - 1] = '\0';
+
+    slot = pl->equipment[EQUIP_SLOT_BODY];
+    name = (slot != -1) ? pl->inventory[slot].name : "";
+    strncpy(p_frame->equip_body, name, EQUIP_NAME_MAX - 1);
+    p_frame->equip_body[EQUIP_NAME_MAX - 1] = '\0';
 }
 
 /**

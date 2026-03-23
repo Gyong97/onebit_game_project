@@ -14,7 +14,8 @@
 #define MAP_HEIGHT 10   /* visible viewport height; logical map is infinite */
 
 /* ── Message buffer size ──────────────────────────────────────────────── */
-#define MSG_BUF_SIZE 128
+#define MSG_BUF_SIZE   128
+#define EQUIP_NAME_MAX  16  /* max chars for an equipped item name */
 
 /**
  * @brief All possible tile types that can occupy a map cell.
@@ -39,6 +40,13 @@ typedef struct {
     int         player_hp;                    /* current HP */
     int         player_max_hp;               /* maximum HP */
     int         player_atk;                  /* attack power */
+    int         player_def;                  /* defense power */
+    int         player_coins;               /* coins collected */
+    int         inventory_count;            /* items in bag */
+    /* Equipped item names; empty string "" means slot is empty */
+    char        equip_weapon[EQUIP_NAME_MAX];
+    char        equip_head[EQUIP_NAME_MAX];
+    char        equip_body[EQUIP_NAME_MAX];
     long        scroll_count;                 /* rows scrolled = depth traveled */
     char        message[MSG_BUF_SIZE];        /* event log line (may be empty) */
 } render_frame_t;

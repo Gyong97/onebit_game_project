@@ -294,8 +294,8 @@ int turn_manager_open_chest(game_state_t *p_state, int x, int y)
         return -1;
     }
 
-    /* Generate a random item: 0=WEAPON, 1=ARMOR, 2=POTION */
-    roll = rand() % 3;
+    /* Generate a random item: 0=WEAPON, 1=ARMOR, 2=HELMET, 3=POTION */
+    roll = rand() % 4;
     item.atk_bonus  = 0;
     item.def_bonus  = 0;
     item.hp_restore = 0;
@@ -309,6 +309,10 @@ int turn_manager_open_chest(game_state_t *p_state, int x, int y)
         item.type      = ITEM_ARMOR;
         item.def_bonus = ITEM_ARMOR_DEF_BONUS;
         item.name[0] = 'A'; item.name[1] = '\0';
+    } else if (roll == 2) {
+        item.type      = ITEM_HELMET;
+        item.def_bonus = ITEM_HELMET_DEF_BONUS;
+        item.name[0] = 'H'; item.name[1] = '\0';
     } else {
         item.type       = ITEM_POTION;
         item.hp_restore = ITEM_POTION_HP_RESTORE;

@@ -16,13 +16,54 @@
 #include <stddef.h>  /* NULL */
 #include "player.h"
 
+/**
+ * @brief Determine the equipment slot for an item type.
+ * @return Slot index, or -1 if the item type is not equippable.
+ */
+static int slot_for_type(item_type_t type)
+{
+    switch (type) {
+        case ITEM_WEAPON: return EQUIP_SLOT_WEAPON;
+        case ITEM_HELMET: return EQUIP_SLOT_HEAD;
+        case ITEM_ARMOR:  return EQUIP_SLOT_BODY;
+        default:          return -1; /* ITEM_NONE, ITEM_POTION */
+    }
+}
+
+/**
+ * @brief Apply the stat bonus of an inventory item (add or subtract).
+ */
+static void apply_item_bonus(player_t *p_player, int inv_idx, int sign)
+{
+    const item_t *it = &p_player->inventory[inv_idx];
+    p_player->atk += sign * it->atk_bonus;
+    p_player->def += sign * it->def_bonus;
+}
+
 int player_equip(player_t *p_player, int inv_idx)
 {
+    int slot;
+
     if (p_player == NULL) {
         return -1;
     }
-    /* Stub: Phase 3 Green implements equip logic */
-    (void)inv_idx;
+    if (inv_idx < 0 || inv_idx >= p_player->inventory_count) {
+        return -1; /* invalid inventory index */
+    }
+
+    slot = slot_for_type(p_player->inventory[inv_idx].type);
+    if (slot == -1) {
+        return -1; /* un-equippable item type */
+    }
+
+    /* If slot already occupied, remove old bonus first */
+    if (p_player->equipment[slot] != -1) {
+        apply_item_bonus(p_player, p_player->equipment[slot], -1);
+    }
+
+    /* Apply new item's bonus and update slot */
+    apply_item_bonus(p_player, inv_idx, +1);
+    p_player->equipment[slot] = inv_idx;
     return 0;
 }
 
@@ -31,8 +72,15 @@ int player_unequip(player_t *p_player, int slot)
     if (p_player == NULL) {
         return -1;
     }
-    /* Stub: Phase 3 Green implements unequip logic */
-    (void)slot;
+    if (slot < 0 || slot >= EQUIP_SLOT_COUNT) {
+        return -1; /* invalid slot */
+    }
+    if (p_player->equipment[slot] == -1) {
+        return -1; /* slot already empty */
+    }
+
+    apply_item_bonus(p_player, p_player->equipment[slot], -1);
+    p_player->equipment[slot] = -1;
     return 0;
 }
 
@@ -56,6 +104,8 @@ int player_init(player_t *p_player)
     if (p_player == NULL) {
         return -1;
     }
+    int i;
+
     p_player->hp              = PLAYER_INIT_HP;
     p_player->max_hp          = PLAYER_INIT_MAXHP;
     p_player->atk             = PLAYER_INIT_ATK;
@@ -64,6 +114,9 @@ int player_init(player_t *p_player)
     p_player->y               = PLAYER_INIT_Y;
     p_player->coins           = 0;
     p_player->inventory_count = 0;
+    for (i = 0; i < EQUIP_SLOT_COUNT; i++) {
+        p_player->equipment[i] = -1;
+    }
     return 0;
 }
 

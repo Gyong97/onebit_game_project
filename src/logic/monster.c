@@ -74,11 +74,16 @@ static int try_step(monster_t *p_monster, player_t *p_player,
             *p_moved = 1;
             return 0;
 
-        case TILE_PLAYER:
-            /* Attack: monster stays in place, deals damage to player */
-            p_player->hp -= p_monster->atk;
+        case TILE_PLAYER: {
+            /* Attack: damage reduced by player defense, minimum 0 */
+            int damage = p_monster->atk - p_player->def;
+            if (damage < 0) {
+                damage = 0;
+            }
+            p_player->hp -= damage;
             *p_moved = 1; /* counts as "acted" */
             return 0;
+        }
 
         default:
             /* TILE_WALL, TILE_MONSTER, TILE_CHEST: blocked */
