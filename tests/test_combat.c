@@ -196,25 +196,18 @@ static int test_open_chest_removes_tile(void)
     return 0;
 }
 
-/* ── Test 9: open_chest improves player HP or ATK ──────────────────────── */
+/* ── Test 9: open_chest adds item to player inventory ───────────────────── */
 
 static int test_open_chest_improves_stats(void)
 {
     game_state_t state;
-    int          old_hp;
-    int          old_atk;
 
     turn_manager_init(&state);
-    /* Reduce HP so HP reward has room to work */
-    state.player.hp = state.player.max_hp / 2;
-    old_hp  = state.player.hp;
-    old_atk = state.player.atk;
-
     map_set_tile(&state.map, PLAYER_INIT_X, PLAYER_INIT_Y - 1, TILE_CHEST);
     turn_manager_open_chest(&state, PLAYER_INIT_X, PLAYER_INIT_Y - 1);
 
-    TEST_ASSERT(state.player.hp > old_hp || state.player.atk > old_atk,
-                "turn_manager_open_chest must increase player HP or ATK");
+    TEST_ASSERT(state.player.inventory_count > 0,
+                "turn_manager_open_chest must add an item to player inventory");
     return 0;
 }
 
