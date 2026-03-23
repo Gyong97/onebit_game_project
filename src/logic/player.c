@@ -16,6 +16,19 @@
 #include <stddef.h>  /* NULL */
 #include "player.h"
 
+int player_add_item(player_t *p_player, const item_t *p_item)
+{
+    if (p_player == NULL || p_item == NULL) {
+        return -1;
+    }
+    if (p_player->inventory_count >= INVENTORY_MAX) {
+        return 1; /* inventory full */
+    }
+    p_player->inventory[p_player->inventory_count] = *p_item;
+    p_player->inventory_count++;
+    return 0;
+}
+
 /* ── Public API ───────────────────────────────────────────────────────── */
 
 int player_init(player_t *p_player)
@@ -23,11 +36,14 @@ int player_init(player_t *p_player)
     if (p_player == NULL) {
         return -1;
     }
-    p_player->hp     = PLAYER_INIT_HP;
-    p_player->max_hp = PLAYER_INIT_MAXHP;
-    p_player->atk    = PLAYER_INIT_ATK;
-    p_player->x      = PLAYER_INIT_X;
-    p_player->y      = PLAYER_INIT_Y;
+    p_player->hp              = PLAYER_INIT_HP;
+    p_player->max_hp          = PLAYER_INIT_MAXHP;
+    p_player->atk             = PLAYER_INIT_ATK;
+    p_player->def             = PLAYER_INIT_DEF;
+    p_player->x               = PLAYER_INIT_X;
+    p_player->y               = PLAYER_INIT_Y;
+    p_player->coins           = 0;
+    p_player->inventory_count = 0;
     return 0;
 }
 
@@ -94,9 +110,12 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
         case TILE_COIN:
             /*
              * Move to floor or coin tile.
-             * For TILE_COIN the tile is overwritten by TILE_PLAYER (coin
-             * collected; Phase 2 will add coin counter tracking).
+             * For TILE_COIN the tile is overwritten by TILE_PLAYER and the
+             * coin counter is incremented.
              */
+            if (tile == TILE_COIN) {
+                p_player->coins++;
+            }
             map_set_tile(p_map, old_x, old_y, TILE_FLOOR);
             p_player->x = new_x;
             p_player->y = new_y;

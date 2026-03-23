@@ -287,19 +287,35 @@ int turn_manager_spawn_row(game_state_t *p_state)
 
 int turn_manager_open_chest(game_state_t *p_state, int x, int y)
 {
+    item_t item;
+    int    roll;
+
     if (p_state == NULL) {
         return -1;
     }
 
-    /* Random reward: 50 % HP, 50 % ATK */
-    if (rand() % 2 == 0) {
-        p_state->player.hp += CHEST_HP_REWARD;
-        if (p_state->player.hp > p_state->player.max_hp) {
-            p_state->player.hp = p_state->player.max_hp;
-        }
+    /* Generate a random item: 0=WEAPON, 1=ARMOR, 2=POTION */
+    roll = rand() % 3;
+    item.atk_bonus  = 0;
+    item.def_bonus  = 0;
+    item.hp_restore = 0;
+    item.name[0]    = '\0';
+
+    if (roll == 0) {
+        item.type      = ITEM_WEAPON;
+        item.atk_bonus = ITEM_WEAPON_ATK_BONUS;
+        item.name[0] = 'W'; item.name[1] = '\0';
+    } else if (roll == 1) {
+        item.type      = ITEM_ARMOR;
+        item.def_bonus = ITEM_ARMOR_DEF_BONUS;
+        item.name[0] = 'A'; item.name[1] = '\0';
     } else {
-        p_state->player.atk += CHEST_ATK_REWARD;
+        item.type       = ITEM_POTION;
+        item.hp_restore = ITEM_POTION_HP_RESTORE;
+        item.name[0] = 'P'; item.name[1] = '\0';
     }
+
+    player_add_item(&p_state->player, &item);
 
     /* Remove chest tile */
     map_set_tile(&p_state->map, x, y, TILE_FLOOR);
