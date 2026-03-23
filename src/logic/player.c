@@ -16,6 +16,26 @@
 #include <stddef.h>  /* NULL */
 #include "player.h"
 
+int player_equip(player_t *p_player, int inv_idx)
+{
+    if (p_player == NULL) {
+        return -1;
+    }
+    /* Stub: Phase 3 Green implements equip logic */
+    (void)inv_idx;
+    return 0;
+}
+
+int player_unequip(player_t *p_player, int slot)
+{
+    if (p_player == NULL) {
+        return -1;
+    }
+    /* Stub: Phase 3 Green implements unequip logic */
+    (void)slot;
+    return 0;
+}
+
 int player_add_item(player_t *p_player, const item_t *p_item)
 {
     if (p_player == NULL || p_item == NULL) {

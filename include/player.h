@@ -19,11 +19,19 @@
 
 #include "map.h"    /* map_t, MAP_WIDTH, VIEWPORT_H */
 #include "input.h"  /* action_t */
+#include "item.h"   /* item_t, INVENTORY_MAX */
 
 /* ── Initial player stats (per game spec) ────────────────────────────── */
 #define PLAYER_INIT_HP    100
 #define PLAYER_INIT_MAXHP 100
 #define PLAYER_INIT_ATK    10
+#define PLAYER_INIT_DEF     0   /* base defense (increases via armor equip) */
+
+/* ── Equipment slot indices ───────────────────────────────────────────── */
+#define EQUIP_SLOT_WEAPON 0  /* ITEM_WEAPON goes here */
+#define EQUIP_SLOT_HEAD   1  /* ITEM_HELMET goes here */
+#define EQUIP_SLOT_BODY   2  /* ITEM_ARMOR  goes here */
+#define EQUIP_SLOT_COUNT  3  /* total number of equipment slots */
 
 /* Extended movement return codes (values > 1) */
 #define PLAYER_MOVE_ATTACK 2  /* player bumped into a monster — attack triggered */
@@ -46,6 +54,11 @@ typedef struct {
     int hp;      /* current hit points                 */
     int max_hp;  /* maximum hit points                 */
     int atk;     /* attack power                       */
+    int def;     /* defense power (reduces incoming damage) */
+    int coins;   /* total coins collected this run     */
+    int inventory_count;                  /* items currently in bag [0, INVENTORY_MAX] */
+    item_t inventory[INVENTORY_MAX];      /* item bag — indices 0..inventory_count-1   */
+    int equipment[EQUIP_SLOT_COUNT];      /* inventory indices of equipped items; -1 = empty */
 } player_t;
 
 /* ── Player API ───────────────────────────────────────────────────────── */
@@ -73,5 +86,43 @@ int player_init(player_t *p_player);
  * @return 0 (moved/scrolled), 1 (blocked), -1 (error).
  */
 int player_move(player_t *p_player, action_t action, map_t *p_map);
+
+/**
+ * @brief Add an item to the player's inventory.
+ *
+ * Copies *p_item into the next free inventory slot and increments
+ * inventory_count. Does nothing if the inventory is already full.
+ *
+ * @param p_player  Player receiving the item; must not be NULL.
+ * @param p_item    Item to add; must not be NULL.
+ * @return 0 on success, 1 if inventory is full, -1 if any arg is NULL.
+ */
+int player_add_item(player_t *p_player, const item_t *p_item);
+
+/**
+ * @brief Equip the inventory item at inv_idx into the appropriate slot.
+ *
+ * Slot is determined by item type:
+ *   ITEM_WEAPON → EQUIP_SLOT_WEAPON (adds atk_bonus to player.atk)
+ *   ITEM_HELMET → EQUIP_SLOT_HEAD   (adds def_bonus to player.def)
+ *   ITEM_ARMOR  → EQUIP_SLOT_BODY   (adds def_bonus to player.def)
+ *
+ * If the slot is already occupied the old item's bonus is removed first.
+ * ITEM_POTION and ITEM_NONE cannot be equipped.
+ *
+ * @param p_player  Player equipping the item; must not be NULL.
+ * @param inv_idx   Index into p_player->inventory [0, inventory_count).
+ * @return 0 on success, -1 on error (NULL, invalid index, un-equippable type).
+ */
+int player_equip(player_t *p_player, int inv_idx);
+
+/**
+ * @brief Unequip the item in the given slot, reversing its stat bonus.
+ *
+ * @param p_player  Player; must not be NULL.
+ * @param slot      One of EQUIP_SLOT_WEAPON / HEAD / BODY.
+ * @return 0 on success, -1 on error (NULL, invalid slot, slot already empty).
+ */
+int player_unequip(player_t *p_player, int slot);
 
 #endif /* PLAYER_H */
