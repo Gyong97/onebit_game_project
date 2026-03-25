@@ -18,6 +18,7 @@
 #include <stdlib.h>   /* rand(), srand() */
 #include <time.h>     /* time() */
 #include <string.h>   /* memset */
+#include <math.h>     /* pow()  — depth-scaled monster stats */
 #include "turn_manager.h"
 
 /* ── Internal helpers ─────────────────────────────────────────────────── */
@@ -87,7 +88,8 @@ static void compute_target(const player_t *p_player, action_t action,
  * @brief Apply player attack to the monster occupying (tx, ty).
  *
  * Reduces monster.hp by player.atk. If hp drops to 0 or below, the monster
- * is killed (alive = 0) and its tile is cleared to TILE_FLOOR.
+ * is killed (alive = 0), its tile is cleared, and the player receives XP.
+ * XP reward: XP_BASE_REWARD + scroll_count/10 (bonus scales with depth).
  */
 static void apply_player_attack(game_state_t *p_state, int tx, int ty)
 {
@@ -102,6 +104,12 @@ static void apply_player_attack(game_state_t *p_state, int tx, int ty)
             if (p_state->monsters[i].hp <= 0) {
                 p_state->monsters[i].alive = 0;
                 map_set_tile(&p_state->map, tx, ty, TILE_FLOOR);
+                /* Grant XP: base reward + depth bonus */
+                {
+                    int xp = XP_BASE_REWARD
+                             + (int)(p_state->map.scroll_count / 10);
+                    player_gain_xp(&p_state->player, xp);
+                }
             }
             break;
         }
@@ -221,6 +229,7 @@ int turn_manager_shift_monsters(game_state_t *p_state)
 int turn_manager_spawn_monster(game_state_t *p_state, int x, int y)
 {
     int slot;
+    int depth;
     tile_type_t tile;
 
     if (p_state == NULL) {
@@ -243,6 +252,21 @@ int turn_manager_spawn_monster(game_state_t *p_state, int x, int y)
     }
 
     monster_init(&p_state->monsters[slot], x, y);
+
+    /*
+     * Depth-based stat scaling (per game spec §4):
+     *   depth = scroll_count / 10
+     *   hp  = (int)(MONSTER_INIT_HP  * 1.1^depth)
+     *   atk = (int)(MONSTER_INIT_ATK * 1.1^depth)
+     * At depth 0 the values remain at the base stats from monster_init().
+     */
+    depth = (int)(p_state->map.scroll_count / 10);
+    if (depth > 0) {
+        double scale = pow(1.1, depth);
+        p_state->monsters[slot].hp  = (int)(MONSTER_INIT_HP  * scale);
+        p_state->monsters[slot].atk = (int)(MONSTER_INIT_ATK * scale);
+    }
+
     map_set_tile(&p_state->map, x, y, TILE_MONSTER);
     return 0;
 }

@@ -27,6 +27,15 @@
 #define PLAYER_INIT_ATK    10
 #define PLAYER_INIT_DEF     0   /* base defense (increases via armor equip) */
 
+/* ── Leveling constants (per game spec §4) ───────────────────────────── */
+#define PLAYER_INIT_LEVEL     1   /* starting level                            */
+#define PLAYER_INIT_XP        0   /* starting experience points                */
+#define LEVELUP_XP_FACTOR    50   /* XP needed to reach next level = level*50  */
+#define LEVELUP_MAXHP_BONUS  10   /* max HP increase per level-up              */
+#define LEVELUP_ATK_BONUS     2   /* ATK increase per level-up                 */
+#define LEVELUP_DEF_BONUS     1   /* DEF increase per level-up                 */
+#define XP_BASE_REWARD       10   /* base XP granted for killing a monster     */
+
 /* ── Equipment slot indices ───────────────────────────────────────────── */
 #define EQUIP_SLOT_WEAPON 0  /* ITEM_WEAPON goes here */
 #define EQUIP_SLOT_HEAD   1  /* ITEM_HELMET goes here */
@@ -56,12 +65,28 @@ typedef struct {
     int atk;     /* attack power                       */
     int def;     /* defense power (reduces incoming damage) */
     int coins;   /* total coins collected this run     */
+    int level;   /* current player level (starts at 1) */
+    int xp;      /* experience points toward next level */
     int inventory_count;                  /* items currently in bag [0, INVENTORY_MAX] */
     item_t inventory[INVENTORY_MAX];      /* item bag — indices 0..inventory_count-1   */
     int equipment[EQUIP_SLOT_COUNT];      /* inventory indices of equipped items; -1 = empty */
 } player_t;
 
 /* ── Player API ───────────────────────────────────────────────────────── */
+
+/**
+ * @brief Add experience points and trigger level-up(s) if the threshold is met.
+ *
+ * Level-up threshold: level * LEVELUP_XP_FACTOR.
+ * On each level-up: level++, max_hp += LEVELUP_MAXHP_BONUS, hp restored to
+ * max_hp, atk += LEVELUP_ATK_BONUS, def += LEVELUP_DEF_BONUS.
+ * Leftover XP carries over and may trigger additional level-ups.
+ *
+ * @param p_player  Player receiving XP; must not be NULL.
+ * @param amount    XP to add (must be >= 0).
+ * @return 0 on success, -1 if p_player is NULL.
+ */
+int player_gain_xp(player_t *p_player, int amount);
 
 /**
  * @brief Initialise a player with default stats and starting position.

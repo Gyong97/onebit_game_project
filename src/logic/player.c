@@ -113,10 +113,33 @@ int player_init(player_t *p_player)
     p_player->x               = PLAYER_INIT_X;
     p_player->y               = PLAYER_INIT_Y;
     p_player->coins           = 0;
+    p_player->level           = PLAYER_INIT_LEVEL;
+    p_player->xp              = PLAYER_INIT_XP;
     p_player->inventory_count = 0;
     for (i = 0; i < EQUIP_SLOT_COUNT; i++) {
         p_player->equipment[i] = -1;
     }
+    return 0;
+}
+
+int player_gain_xp(player_t *p_player, int amount)
+{
+    if (p_player == NULL) {
+        return -1;
+    }
+
+    p_player->xp += amount;
+
+    /* Process level-ups: threshold for current level = level * LEVELUP_XP_FACTOR */
+    while (p_player->xp >= p_player->level * LEVELUP_XP_FACTOR) {
+        p_player->xp     -= p_player->level * LEVELUP_XP_FACTOR;
+        p_player->level++;
+        p_player->max_hp += LEVELUP_MAXHP_BONUS;
+        p_player->hp      = p_player->max_hp; /* full heal */
+        p_player->atk    += LEVELUP_ATK_BONUS;
+        p_player->def    += LEVELUP_DEF_BONUS;
+    }
+
     return 0;
 }
 

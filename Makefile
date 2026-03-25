@@ -5,7 +5,7 @@
 
 CC      := gcc
 CFLAGS  := -std=c99 -Wall -Wextra -Iinclude
-LDFLAGS :=
+LDFLAGS := -lm
 
 # ── Directory layout ─────────────────────────────────────────────────────────
 SRC_DIR      := src
