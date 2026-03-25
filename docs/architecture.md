@@ -104,3 +104,11 @@
     * current_viewport_y: 현재 화면에 보여지는 맵의 시작 절대 좌표를 추적.
 
     * render_map(): 전체 맵 배열에서 current_viewport_y부터 10줄을 읽어 상대 좌표로 렌더링.
+
+## 5. 데이터 테이블 설계 (Data-Driven Design)
+* **Item Database (`item_db.c`):** * 모든 아이템 정보를 `static const item_t g_item_table[]` 배열로 관리.
+  * 상자나 상점에서는 Item ID만 생성하고, 실제 스탯은 이 테이블을 참조함.
+* **몬스터 행동 패턴 확장:** * `monster_t` 구조체에 `type_id` 추가. ID에 따라 '직진형', '매복형', '도망형' AI 분기 처리.
+
+## 6. 저장 시스템 아키텍처
+* **파일 구조:** 간단한 바이너리 구조체 덤프 방식을 사용하되, 파일 상단에 `MAGIC_NUMBER`와 `VERSION`을 두어 데이터 오염 방지.

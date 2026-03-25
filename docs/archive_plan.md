@@ -30,3 +30,21 @@
 - [x] `src/logic/player.c` 수정: TILE_MONSTER → PLAYER_MOVE_ATTACK, TILE_CHEST → PLAYER_MOVE_CHEST 반환
 - [x] `src/logic/monster.c` 수정: try_step() TILE_PLAYER 시 player.hp -= monster.atk 실제 데미지 적용
 - [x] `src/logic/turn_manager.c` 수정: PLAYER_MOVE_ATTACK 처리(몬스터 탐색·데미지·사망), PLAYER_MOVE_CHEST 처리(보상·타일 제거), monster_acts 후 player.hp ≤ 0 → TURN_GAME_OVER, spawn_row에 CHEST_SPAWN_PCT 확률 상자 스폰 추가
+
+# 프로젝트 실행 계획 (Phase 2: 시스템 고도화)
+
+## [x] 1단계: 맵 엔진 및 스크롤 로직 수정 (최우선)
+- [x] 맵 생성 시 내부 장애물(`#`) 및 엔티티 무작위 스폰 로직 구현
+- [x] 5-Buffer 스크롤 알고리즘 적용 (상단 5칸 유지)
+- [x] 뷰포트 기반 상대 좌표 렌더링 시스템 구축 (플레이어 실종 버그 해결)
+- [x] 하단 이동(Backtracking) 차단 로직 구현
+
+## [x] 2단계: 아이템 및 수집 시스템 구현
+- [x] 코인(`$`) 엔티티 정의 및 플레이어 수집 로직 구현
+- [x] 인벤토리 시스템(배열 구조) 및 아이템 획득 로직 구현
+- [x] 상자(`C`) 오픈 시 무작위 아이템 생성 및 인벤토리 저장 연동
+
+## [x] 3단계: 장비 및 스탯 시스템 고도화
+- [x] 장비 슬롯(무기/방어구) 정의 및 장착/해제 로직 구현
+- [x] 장비 장착에 따른 공격력(Atk), 방어력(Def) 보정 시스템 구현
+- [x] UI에 인벤토리 및 장착 상태 표시 기능 추가
