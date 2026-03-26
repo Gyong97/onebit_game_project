@@ -26,7 +26,8 @@ typedef enum {
     TILE_PLAYER  = 2, /* 'P' player entity */
     TILE_MONSTER = 3, /* 'M' monster entity */
     TILE_CHEST   = 4, /* 'C' chest object */
-    TILE_COIN    = 5  /* '$' collectible coin */
+    TILE_COIN    = 5, /* '$' collectible coin */
+    TILE_SHOP    = 6  /* 'S' shop tile — buy items with coins */
 } tile_type_t;
 
 /**

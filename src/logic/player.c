@@ -249,6 +249,12 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
              */
             return PLAYER_MOVE_CHEST;
 
+        case TILE_SHOP:
+            /*
+             * Shop interaction: player stays, turn_manager handles purchase.
+             */
+            return PLAYER_MOVE_SHOP;
+
         default:
             return 1; /* blocked */
     }

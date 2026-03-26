@@ -46,6 +46,7 @@
 #define PLAYER_MOVE_ATTACK 2  /* player bumped into a monster — attack triggered */
 #define PLAYER_MOVE_CHEST  3  /* player bumped into a chest  — open triggered    */
 #define PLAYER_MOVE_COIN   4  /* player stepped onto a coin  — collect triggered */
+#define PLAYER_MOVE_SHOP   5  /* player bumped into a shop   — buy triggered     */
 
 /* 5-buffer scroll threshold: scroll fires when player.y < SCROLL_BUFFER */
 #define SCROLL_BUFFER 5

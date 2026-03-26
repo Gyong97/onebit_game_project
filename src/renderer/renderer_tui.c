@@ -18,7 +18,8 @@ static const char TILE_CHARS[] = {
     [TILE_PLAYER]  = 'P',
     [TILE_MONSTER] = 'M',
     [TILE_CHEST]   = 'C',
-    [TILE_COIN]    = '$'
+    [TILE_COIN]    = '$',
+    [TILE_SHOP]    = 'S'
 };
 
 /* ── Public API implementation ────────────────────────────────────────── */

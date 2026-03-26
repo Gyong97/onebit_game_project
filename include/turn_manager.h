@@ -30,6 +30,10 @@
 #define CHEST_ATK_REWARD  5  /* ATK gained when opening a chest           */
 #define COIN_SPAWN_PCT   15  /* % chance per floor cell to spawn a coin   */
 
+/* ── Shop constants ──────────────────────────────────────────────────── */
+#define SHOP_SPAWN_INTERVAL 20  /* shop spawns every N scrolls (confirmed) */
+#define SHOP_ITEM_COST       5  /* coins required to buy one item           */
+
 #include "monster.h"       /* monster_t, MONSTER_MAX_COUNT */
 #include "player.h"        /* player_t */
 #include "map.h"           /* map_t */
@@ -146,6 +150,25 @@ int turn_manager_spawn_row(game_state_t *p_state);
  * @return Number of alive monsters, or -1 on error.
  */
 int turn_manager_alive_count(const game_state_t *p_state);
+
+/**
+ * @brief Enter a shop at (x, y): spend coins to receive a random item.
+ *
+ * If the player has >= SHOP_ITEM_COST coins:
+ *   - Deducts SHOP_ITEM_COST from player.coins.
+ *   - Picks a random item from item_db and adds it to inventory.
+ *   - Replaces TILE_SHOP at (x, y) with TILE_FLOOR.
+ *   - Returns 0.
+ * If the player has < SHOP_ITEM_COST coins:
+ *   - Does nothing.
+ *   - Returns 1 (insufficient funds).
+ *
+ * @param p_state  Game state; must not be NULL.
+ * @param x        Column of the shop tile.
+ * @param y        Row    of the shop tile.
+ * @return 0 (purchased), 1 (insufficient coins), -1 (error).
+ */
+int turn_manager_enter_shop(game_state_t *p_state, int x, int y);
 
 /**
  * @brief Open a chest at (x, y) and give the player a random reward.

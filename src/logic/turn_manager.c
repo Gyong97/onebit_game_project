@@ -150,6 +150,10 @@ int turn_manager_player_act(game_state_t *p_state, action_t action)
             return -1;
         }
         /* fall through to monster turn */
+    } else if (move_result == PLAYER_MOVE_SHOP) {
+        turn_manager_enter_shop(p_state, tx, ty);
+        /* insufficient coins → return 1 is ignored; shop stays; monsters act */
+        /* fall through to monster turn */
     }
 
     /* Player moved or acted: handle scroll then run monster turn */
@@ -290,13 +294,30 @@ int turn_manager_spawn_row(game_state_t *p_state)
 {
     int x;
     int count;
+    int shop_col; /* column reserved for shop this row (-1 = none) */
 
     if (p_state == NULL) {
         return -1;
     }
 
+    /*
+     * Shop spawn: every SHOP_SPAWN_INTERVAL scrolls (confirmed placement).
+     * Reserve the centre interior column and force TILE_SHOP there.
+     * The reserved column is skipped in the main procedural loop so it
+     * cannot be overwritten by monster/chest/coin rolls.
+     */
+    shop_col = -1;
+    if (p_state->map.scroll_count > 0
+        && p_state->map.scroll_count % SHOP_SPAWN_INTERVAL == 0) {
+        shop_col = MAP_WIDTH / 2; /* centre interior column */
+        map_set_tile(&p_state->map, shop_col, 0, TILE_SHOP);
+    }
+
     count = 0;
     for (x = 1; x < MAP_WIDTH - 1; x++) {
+        if (x == shop_col) {
+            continue; /* reserved for shop */
+        }
         if (rand() % 100 < MONSTER_SPAWN_PCT) {
             if (turn_manager_spawn_monster(p_state, x, 0) == 0) {
                 count++;
@@ -322,6 +343,30 @@ int turn_manager_spawn_row(game_state_t *p_state)
         }
     }
     return count;
+}
+
+int turn_manager_enter_shop(game_state_t *p_state, int x, int y)
+{
+    item_t item;
+    int    id;
+
+    if (p_state == NULL) {
+        return -1;
+    }
+
+    if (p_state->player.coins < SHOP_ITEM_COST) {
+        return 1; /* insufficient funds */
+    }
+
+    /* Deduct cost, pick a random item, add to inventory */
+    p_state->player.coins -= SHOP_ITEM_COST;
+    id = rand() % ITEM_DB_COUNT;
+    item_db_get(id, &item);
+    player_add_item(&p_state->player, &item);
+
+    /* Remove shop tile */
+    map_set_tile(&p_state->map, x, y, TILE_FLOOR);
+    return 0;
 }
 
 int turn_manager_open_chest(game_state_t *p_state, int x, int y)
