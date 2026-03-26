@@ -21,17 +21,39 @@
 
 /* ── Public API ───────────────────────────────────────────────────────── */
 
-int monster_init(monster_t *p_monster, int x, int y)
+int monster_init_typed(monster_t *p_monster, int x, int y,
+                       monster_type_t type)
 {
     if (p_monster == NULL) {
         return -1;
     }
     p_monster->x     = x;
     p_monster->y     = y;
-    p_monster->hp    = MONSTER_INIT_HP;
-    p_monster->atk   = MONSTER_INIT_ATK;
     p_monster->alive = 1;
+    p_monster->type  = type;
+
+    switch (type) {
+        case MONSTER_TYPE_SLIME:
+            p_monster->hp  = SLIME_INIT_HP;
+            p_monster->atk = SLIME_INIT_ATK;
+            break;
+        case MONSTER_TYPE_BAT:
+            p_monster->hp  = BAT_INIT_HP;
+            p_monster->atk = BAT_INIT_ATK;
+            break;
+        case MONSTER_TYPE_GOBLIN:
+        default:
+            p_monster->hp  = GOBLIN_INIT_HP;
+            p_monster->atk = GOBLIN_INIT_ATK;
+            p_monster->type = MONSTER_TYPE_GOBLIN;
+            break;
+    }
     return 0;
+}
+
+int monster_init(monster_t *p_monster, int x, int y)
+{
+    return monster_init_typed(p_monster, x, y, MONSTER_TYPE_GOBLIN);
 }
 
 /**

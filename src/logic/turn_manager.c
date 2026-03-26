@@ -20,6 +20,7 @@
 #include <string.h>   /* memset */
 #include <math.h>     /* pow()  — depth-scaled monster stats */
 #include "turn_manager.h"
+#include "item_db.h"    /* item_db_get(), ITEM_DB_COUNT */
 
 /* ── Internal helpers ─────────────────────────────────────────────────── */
 
@@ -226,10 +227,11 @@ int turn_manager_shift_monsters(game_state_t *p_state)
     return 0;
 }
 
-int turn_manager_spawn_monster(game_state_t *p_state, int x, int y)
+int turn_manager_spawn_monster_typed(game_state_t *p_state, int x, int y,
+                                     monster_type_t type)
 {
-    int slot;
-    int depth;
+    int         slot;
+    int         depth;
     tile_type_t tile;
 
     if (p_state == NULL) {
@@ -251,24 +253,37 @@ int turn_manager_spawn_monster(game_state_t *p_state, int x, int y)
         return 1; /* monster pool is full */
     }
 
-    monster_init(&p_state->monsters[slot], x, y);
+    monster_init_typed(&p_state->monsters[slot], x, y, type);
 
     /*
      * Depth-based stat scaling (per game spec §4):
      *   depth = scroll_count / 10
-     *   hp  = (int)(MONSTER_INIT_HP  * 1.1^depth)
-     *   atk = (int)(MONSTER_INIT_ATK * 1.1^depth)
-     * At depth 0 the values remain at the base stats from monster_init().
+     *   hp  = (int)(base_hp  * 1.1^depth)
+     *   atk = (int)(base_atk * 1.1^depth)
+     * Scale is applied to the type's own base stats already set by
+     * monster_init_typed(), so each species scales from its own baseline.
      */
     depth = (int)(p_state->map.scroll_count / 10);
     if (depth > 0) {
         double scale = pow(1.1, depth);
-        p_state->monsters[slot].hp  = (int)(MONSTER_INIT_HP  * scale);
-        p_state->monsters[slot].atk = (int)(MONSTER_INIT_ATK * scale);
+        p_state->monsters[slot].hp  = (int)(p_state->monsters[slot].hp  * scale);
+        p_state->monsters[slot].atk = (int)(p_state->monsters[slot].atk * scale);
     }
 
     map_set_tile(&p_state->map, x, y, TILE_MONSTER);
     return 0;
+}
+
+int turn_manager_spawn_monster(game_state_t *p_state, int x, int y)
+{
+    monster_type_t type;
+
+    if (p_state == NULL) {
+        return -1;
+    }
+
+    type = (monster_type_t)(rand() % MONSTER_TYPE_COUNT);
+    return turn_manager_spawn_monster_typed(p_state, x, y, type);
 }
 
 int turn_manager_spawn_row(game_state_t *p_state)
@@ -312,37 +327,15 @@ int turn_manager_spawn_row(game_state_t *p_state)
 int turn_manager_open_chest(game_state_t *p_state, int x, int y)
 {
     item_t item;
-    int    roll;
+    int    id;
 
     if (p_state == NULL) {
         return -1;
     }
 
-    /* Generate a random item: 0=WEAPON, 1=ARMOR, 2=HELMET, 3=POTION */
-    roll = rand() % 4;
-    item.atk_bonus  = 0;
-    item.def_bonus  = 0;
-    item.hp_restore = 0;
-    item.name[0]    = '\0';
-
-    if (roll == 0) {
-        item.type      = ITEM_WEAPON;
-        item.atk_bonus = ITEM_WEAPON_ATK_BONUS;
-        item.name[0] = 'W'; item.name[1] = '\0';
-    } else if (roll == 1) {
-        item.type      = ITEM_ARMOR;
-        item.def_bonus = ITEM_ARMOR_DEF_BONUS;
-        item.name[0] = 'A'; item.name[1] = '\0';
-    } else if (roll == 2) {
-        item.type      = ITEM_HELMET;
-        item.def_bonus = ITEM_HELMET_DEF_BONUS;
-        item.name[0] = 'H'; item.name[1] = '\0';
-    } else {
-        item.type       = ITEM_POTION;
-        item.hp_restore = ITEM_POTION_HP_RESTORE;
-        item.name[0] = 'P'; item.name[1] = '\0';
-    }
-
+    /* Pick a random item from the database and give it to the player */
+    id = rand() % ITEM_DB_COUNT;
+    item_db_get(id, &item);
     player_add_item(&p_state->player, &item);
 
     /* Remove chest tile */

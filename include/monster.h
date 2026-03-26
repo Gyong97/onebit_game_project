@@ -17,9 +17,35 @@
 #include "player.h"  /* player_t (read-only reference for AI targeting) */
 #include "map.h"     /* map_t, tile_type_t */
 
-/* ── Monster constants (per game spec) ───────────────────────────────── */
-#define MONSTER_INIT_HP    20  /* starting hit points     */
-#define MONSTER_INIT_ATK    5  /* attack power            */
+/* ── Monster type enum ────────────────────────────────────────────────── */
+
+/**
+ * @brief Distinct monster species.
+ *
+ * MONSTER_TYPE_COUNT is a sentinel — always equals the number of types.
+ */
+typedef enum {
+    MONSTER_TYPE_GOBLIN = 0,  /* balanced: default monster            */
+    MONSTER_TYPE_SLIME  = 1,  /* high HP, low ATK                     */
+    MONSTER_TYPE_BAT    = 2,  /* low HP,  high ATK                    */
+    MONSTER_TYPE_COUNT  = 3   /* sentinel — number of monster types   */
+} monster_type_t;
+
+/* ── Per-type base stats ──────────────────────────────────────────────── */
+#define GOBLIN_INIT_HP   20  /* goblin starting HP  */
+#define GOBLIN_INIT_ATK   5  /* goblin starting ATK */
+
+#define SLIME_INIT_HP    40  /* slime starting HP   (> GOBLIN)  */
+#define SLIME_INIT_ATK    3  /* slime starting ATK  (< GOBLIN)  */
+
+#define BAT_INIT_HP      10  /* bat starting HP     (< GOBLIN)  */
+#define BAT_INIT_ATK     10  /* bat starting ATK    (> GOBLIN)  */
+
+/* ── Legacy aliases (kept for existing code that uses MONSTER_INIT_*) ── */
+#define MONSTER_INIT_HP    GOBLIN_INIT_HP
+#define MONSTER_INIT_ATK   GOBLIN_INIT_ATK
+
+/* ── Monster pool constants ───────────────────────────────────────────── */
 #define MONSTER_MAX_COUNT   8  /* max live monsters in viewport at once */
 #define MONSTER_SPAWN_PCT  30  /* % chance to spawn per interior column  */
 
@@ -29,20 +55,23 @@
  * alive == 0 means this pool slot is free and must be ignored by callers.
  */
 typedef struct {
-    int x;     /* column in viewport [0, MAP_WIDTH)  */
-    int y;     /* row    in viewport [0, VIEWPORT_H) */
-    int hp;    /* current hit points                 */
-    int atk;   /* attack power                       */
-    int alive; /* non-zero while the monster is active */
+    int           x;     /* column in viewport [0, MAP_WIDTH)  */
+    int           y;     /* row    in viewport [0, VIEWPORT_H) */
+    int           hp;    /* current hit points                 */
+    int           atk;   /* attack power                       */
+    int           alive; /* non-zero while the monster is active */
+    monster_type_t type; /* species of this monster            */
 } monster_t;
 
 /* ── Monster API ──────────────────────────────────────────────────────── */
 
 /**
- * @brief Initialise a monster slot at the given map position.
+ * @brief Initialise a monster slot as a GOBLIN at the given map position.
  *
- * Sets hp = MONSTER_INIT_HP, atk = MONSTER_INIT_ATK, alive = 1.
- * Does NOT write TILE_MONSTER to the map (caller's responsibility).
+ * Sets hp = GOBLIN_INIT_HP, atk = GOBLIN_INIT_ATK, type = MONSTER_TYPE_GOBLIN,
+ * alive = 1.  Does NOT write TILE_MONSTER to the map (caller's responsibility).
+ *
+ * Equivalent to monster_init_typed(p_monster, x, y, MONSTER_TYPE_GOBLIN).
  *
  * @param p_monster  Output slot; must not be NULL.
  * @param x          Column to spawn at.
@@ -50,6 +79,25 @@ typedef struct {
  * @return 0 on success, -1 if p_monster is NULL.
  */
 int monster_init(monster_t *p_monster, int x, int y);
+
+/**
+ * @brief Initialise a monster slot of the given type at the given position.
+ *
+ * Selects base stats according to the type:
+ *   GOBLIN → GOBLIN_INIT_HP / GOBLIN_INIT_ATK
+ *   SLIME  → SLIME_INIT_HP  / SLIME_INIT_ATK
+ *   BAT    → BAT_INIT_HP    / BAT_INIT_ATK
+ *
+ * Does NOT write TILE_MONSTER to the map (caller's responsibility).
+ *
+ * @param p_monster  Output slot; must not be NULL.
+ * @param x          Column to spawn at.
+ * @param y          Row    to spawn at.
+ * @param type       Monster species to initialise.
+ * @return 0 on success, -1 if p_monster is NULL.
+ */
+int monster_init_typed(monster_t *p_monster, int x, int y,
+                       monster_type_t type);
 
 /**
  * @brief Move this monster one cell toward the player (tracking AI).

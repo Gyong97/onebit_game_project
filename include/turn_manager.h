@@ -100,11 +100,26 @@ int turn_manager_monsters_act(game_state_t *p_state);
 int turn_manager_shift_monsters(game_state_t *p_state);
 
 /**
- * @brief Attempt to spawn a single monster at (x, y).
+ * @brief Attempt to spawn a single monster of a specific type at (x, y).
  *
- * Finds the first free slot (alive == 0), calls monster_init(), and places
- * TILE_MONSTER on the map.  Does nothing if the position already has a
- * non-floor tile.
+ * Finds the first free slot (alive == 0), calls monster_init_typed(), applies
+ * depth-based stat scaling, and places TILE_MONSTER on the map.
+ * Does nothing if the position already has a non-floor tile.
+ *
+ * @param p_state  Game state; must not be NULL.
+ * @param x        Target column [0, MAP_WIDTH).
+ * @param y        Target row    [0, VIEWPORT_H).
+ * @param type     Monster species to spawn.
+ * @return 0 (spawned), 1 (pool full or cell occupied), -1 (error).
+ */
+int turn_manager_spawn_monster_typed(game_state_t *p_state, int x, int y,
+                                     monster_type_t type);
+
+/**
+ * @brief Attempt to spawn a single random-type monster at (x, y).
+ *
+ * Randomly selects a monster type and delegates to
+ * turn_manager_spawn_monster_typed().
  *
  * @param p_state  Game state; must not be NULL.
  * @param x        Target column [0, MAP_WIDTH).

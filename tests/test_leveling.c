@@ -129,9 +129,9 @@ static void test_monster_scaling(void)
     /* Simulate the player having scrolled 20 rows (depth = 20/10 = 2) */
     state.map.scroll_count = 20;
 
-    /* Ensure spawn cell is clear floor */
+    /* Ensure spawn cell is clear floor; use GOBLIN for deterministic stats */
     map_set_tile(&state.map, 1, 0, TILE_FLOOR);
-    assert(turn_manager_spawn_monster(&state, 1, 0) == 0);
+    assert(turn_manager_spawn_monster_typed(&state, 1, 0, MONSTER_TYPE_GOBLIN) == 0);
 
     for (i = 0; i < MONSTER_MAX_COUNT; i++) {
         if (state.monsters[i].alive &&
@@ -145,11 +145,11 @@ static void test_monster_scaling(void)
     assert(p_m != NULL);
 
     /*
-     * At depth=2: hp  = (int)(20 * 1.1^2) = (int)(24.2) = 24  > 20
-     *             atk = (int)( 5 * 1.1^2) = (int)( 6.05) =  6  >  5
+     * GOBLIN at depth=2: hp  = (int)(20 * 1.1^2) = (int)(24.2) = 24  > 20
+     *                    atk = (int)( 5 * 1.1^2) = (int)( 6.05) =  6  >  5
      */
-    assert(p_m->hp  > MONSTER_INIT_HP);
-    assert(p_m->atk > MONSTER_INIT_ATK);
+    assert(p_m->hp  > GOBLIN_INIT_HP);
+    assert(p_m->atk > GOBLIN_INIT_ATK);
     printf("[PASS] monster scaling: hp=%d atk=%d at scroll=20\n",
            p_m->hp, p_m->atk);
 }
