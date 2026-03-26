@@ -224,8 +224,9 @@ static int test_chest_item_has_valid_type(void)
     turn_manager_open_chest(&state, cx, cy);
 
     itype = state.player.inventory[0].type;
-    TEST_ASSERT(itype == ITEM_WEAPON || itype == ITEM_ARMOR || itype == ITEM_POTION,
-                "chest item type must be WEAPON, ARMOR, or POTION");
+    TEST_ASSERT(itype == ITEM_WEAPON || itype == ITEM_ARMOR ||
+                itype == ITEM_HELMET || itype == ITEM_POTION,
+                "chest item type must be WEAPON, ARMOR, HELMET, or POTION");
     return 0;
 }
 

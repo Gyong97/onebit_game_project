@@ -48,14 +48,15 @@ int renderer_draw(const render_frame_t *p_frame)
         putchar('\n');
     }
 
-    /* Draw the HUD: player stats + depth */
-    printf("HP: %d/%d  ATK: %d  DEF: %d  COINS: %d  DEPTH: %ld\n",
+    /* Draw the HUD: player stats + depth + best record */
+    printf("HP: %d/%d  ATK: %d  DEF: %d  COINS: %d  DEPTH: %ld  BEST: %ld\n",
            p_frame->player_hp,
            p_frame->player_max_hp,
            p_frame->player_atk,
            p_frame->player_def,
            p_frame->player_coins,
-           p_frame->scroll_count);
+           p_frame->scroll_count,
+           p_frame->best_depth);
 
     /* Draw equipment slots */
     printf("[W]%-6s  [H]%-6s  [B]%-6s  BAG:%d/%d\n",

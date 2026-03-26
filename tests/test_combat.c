@@ -242,18 +242,13 @@ static int test_player_attack_triggers_monster_turn(void)
 
     turn_manager_init(&state);
     /*
-     * Monster A at (PLAYER_INIT_X, PLAYER_INIT_Y - 1) — player attacks this one.
-     * Monster B at (PLAYER_INIT_X - 2, PLAYER_INIT_Y) — will move toward player.
-     *
-     * Player attacks Monster A (ACTION_MOVE_UP → PLAYER_MOVE_ATTACK).
-     * After attack, monsters_act is called.
-     * Monster A (if alive) stays adjacent and attacks: player.hp decreases.
-     * OR Monster B moves closer (observable by position).
-     *
-     * Simplest check: player.hp decreases because Monster A retaliates.
-     * Monster A survives (20 hp - 10 player atk = 10 hp remaining).
+     * Spawn a SLIME (HP=40) adjacent above the player.
+     * Player ATK=10: SLIME survives with HP=30 and retaliates.
+     * Using a typed spawn for deterministic HP (random type could be BAT
+     * HP=10 which the player kills in one hit, preventing retaliation).
      */
-    turn_manager_spawn_monster(&state, PLAYER_INIT_X, PLAYER_INIT_Y - 1);
+    turn_manager_spawn_monster_typed(&state, PLAYER_INIT_X, PLAYER_INIT_Y - 1,
+                                     MONSTER_TYPE_SLIME);
     initial_hp = state.player.hp;
 
     turn_manager_player_act(&state, ACTION_MOVE_UP);

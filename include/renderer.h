@@ -49,6 +49,7 @@ typedef struct {
     char        equip_head[EQUIP_NAME_MAX];
     char        equip_body[EQUIP_NAME_MAX];
     long        scroll_count;                 /* rows scrolled = depth traveled */
+    long        best_depth;                   /* best depth from save data       */
     char        message[MSG_BUF_SIZE];        /* event log line (may be empty) */
 } render_frame_t;
 

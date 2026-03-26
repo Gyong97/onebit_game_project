@@ -3,20 +3,26 @@
  * @brief Entry point and game loop for the OneBit roguelike.
  *
  * Controls: W=up  S=down  A=left  D=right  Q=quit
+ *
+ * Persistent data (best depth, total coins) is loaded from save.dat on
+ * startup and updated on game over via save_manager.
  */
 #include <stdio.h>
 #include <string.h>
 #include "renderer.h"
 #include "input.h"
 #include "turn_manager.h"
-#include "player.h"   /* EQUIP_SLOT_* */
+#include "player.h"       /* EQUIP_SLOT_* */
+#include "save_manager.h" /* save_data_t, save_manager_* */
 
 /* ── Helpers ──────────────────────────────────────────────────────────── */
 
 /**
  * @brief Copy game_state_t into a render_frame_t snapshot for the renderer.
  */
-static void build_frame(const game_state_t *p_state, render_frame_t *p_frame)
+static void build_frame(const game_state_t *p_state,
+                        const save_data_t  *p_save,
+                        render_frame_t     *p_frame)
 {
     int             r;
     int             c;
@@ -37,6 +43,7 @@ static void build_frame(const game_state_t *p_state, render_frame_t *p_frame)
     p_frame->player_coins    = pl->coins;
     p_frame->inventory_count = pl->inventory_count;
     p_frame->scroll_count    = p_state->map.scroll_count;
+    p_frame->best_depth      = p_save->best_depth;
     p_frame->message[0]      = '\0';
 
     slot = pl->equipment[EQUIP_SLOT_WEAPON];
@@ -83,6 +90,7 @@ static tile_type_t peek_target(const game_state_t *p_state, action_t action)
 int main(void)
 {
     game_state_t   state;
+    save_data_t    save;
     render_frame_t frame;
     action_t       action;
     tile_type_t    target;
@@ -93,6 +101,9 @@ int main(void)
         return 1;
     }
 
+    /* Load persistent save data (creates zeroed default if missing) */
+    save_manager_load(&save);
+
     if (turn_manager_init(&state) != 0) {
         fprintf(stderr, "error: turn_manager init failed\n");
         renderer_destroy();
@@ -102,7 +113,7 @@ int main(void)
     /* ── Game loop ──────────────────────────────────────────────────── */
     for (;;) {
         renderer_clear();
-        build_frame(&state, &frame);
+        build_frame(&state, &save, &frame);
         renderer_draw(&frame);
 
         if (input_get_action(&action) != 0) {
@@ -121,15 +132,17 @@ int main(void)
         turn_result = turn_manager_player_act(&state, action);
 
         if (turn_result == TURN_GAME_OVER) {
-            snprintf(frame.message, MSG_BUF_SIZE,
-                     "YOU DIED at depth %ld!", state.map.scroll_count);
+            /* Update and persist save data before showing game over */
+            save_manager_update_on_death(&save, &state);
+
             renderer_clear();
-            build_frame(&state, &frame);
-            /* Restore message that build_frame cleared */
+            build_frame(&state, &save, &frame);
             snprintf(frame.message, MSG_BUF_SIZE,
-                     "YOU DIED at depth %ld!", state.map.scroll_count);
+                     "YOU DIED at depth %ld!  BEST: %ld",
+                     state.map.scroll_count, save.best_depth);
             renderer_draw(&frame);
-            printf("\n*** GAME OVER ***\n");
+            printf("\n*** GAME OVER ***  Total coins earned: %ld\n",
+                   save.total_coins);
             break;
         }
 
@@ -143,26 +156,39 @@ int main(void)
                     break;
                 case TILE_CHEST:
                     snprintf(frame.message, MSG_BUF_SIZE,
-                             "You open a chest! [BAG: %d]",
-                             state.player.inventory_count);
+                             "You open a chest! Got: %s",
+                             state.player.inventory_count > 0
+                             ? state.player.inventory[
+                                   state.player.inventory_count - 1].name
+                             : "?");
                     break;
                 case TILE_COIN:
                     snprintf(frame.message, MSG_BUF_SIZE,
                              "Coin! (%d total)", state.player.coins);
                     break;
+                case TILE_SHOP:
+                    if (state.player.coins >= SHOP_ITEM_COST) {
+                        snprintf(frame.message, MSG_BUF_SIZE,
+                                 "Shop! Bought: %s  (%d coins left)",
+                                 state.player.inventory_count > 0
+                                 ? state.player.inventory[
+                                       state.player.inventory_count - 1].name
+                                 : "?",
+                                 state.player.coins);
+                    } else {
+                        snprintf(frame.message, MSG_BUF_SIZE,
+                                 "Shop! Need %d coins (have %d).",
+                                 SHOP_ITEM_COST, state.player.coins);
+                    }
+                    break;
                 default:
                     break;
             }
         }
-
-        /* Persist message into next frame */
-        strncpy(frame.message,
-                frame.message[0] != '\0' ? frame.message : "",
-                MSG_BUF_SIZE - 1);
     }
 
-    printf("\nFinal DEPTH: %ld  COINS: %d\n",
-           state.map.scroll_count, state.player.coins);
+    printf("\nFinal DEPTH: %ld  COINS: %d  BEST DEPTH: %ld\n",
+           state.map.scroll_count, state.player.coins, save.best_depth);
     renderer_destroy();
     return 0;
 }
