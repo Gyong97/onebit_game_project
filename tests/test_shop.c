@@ -8,11 +8,11 @@
  *  3. spawn_row at scroll_count=10 does NOT place TILE_SHOP in y=0
  *  4. spawn_row at scroll_count=40 places TILE_SHOP in y=0
  *  5. player_move into TILE_SHOP returns PLAYER_MOVE_SHOP
- *  6. enter_shop: enough coins → 0, coins deducted, item added
- *  7. enter_shop: not enough coins → 1, coins unchanged, no item added
- *  8. enter_shop: removes shop tile on successful purchase
+ *  6. enter_shop: opens shop UI (active=1), coins/inventory unchanged
+ *  7. enter_shop: opens shop even with 0 coins (buy/sell handled later)
+ *  8. enter_shop: sets TILE_SHOP_OPEN on entry (one-time visit)
  *  9. enter_shop: NULL guard returns -1
- * 10. player_act: bumping into shop with coins deducts coins
+ * 10. player_act: bumping into shop returns TURN_SHOP_OPEN, no coin deduction
  */
 #include <stdio.h>
 #include <assert.h>
@@ -105,7 +105,7 @@ static void test_player_move_shop_return_code(void)
     printf("[PASS] player_move: returns PLAYER_MOVE_SHOP when bumping shop\n");
 }
 
-/* ── 6. enter_shop: enough coins → success ───────────────────────────── */
+/* ── 6. enter_shop: opens shop UI mode regardless of coins ───────────── */
 static void test_enter_shop_success(void)
 {
     game_state_t state;
@@ -113,20 +113,22 @@ static void test_enter_shop_success(void)
     int          coins_before;
 
     turn_manager_init(&state);
-    state.player.coins = SHOP_ITEM_COST + 5;  /* more than enough */
+    state.player.coins = SHOP_ITEM_COST + 5;
     coins_before        = state.player.coins;
     inv_before          = state.player.inventory_count;
 
     map_set_tile(&state.map, 1, 0, TILE_SHOP);
-    assert(turn_manager_enter_shop(&state, 1, 0) == 0);
+    assert(turn_manager_enter_shop(&state, 1, 0) == TURN_SHOP_OPEN);
 
-    assert(state.player.coins == coins_before - SHOP_ITEM_COST);
-    assert(state.player.inventory_count == inv_before + 1);
-    printf("[PASS] enter_shop: coins deducted, item added (cost=%d)\n",
-           SHOP_ITEM_COST);
+    /* Entering the shop does NOT deduct coins or add items */
+    assert(state.player.coins == coins_before);
+    assert(state.player.inventory_count == inv_before);
+    /* Shop UI is now active */
+    assert(state.shop.active == 1);
+    printf("[PASS] enter_shop: shop.active=1, coins/inventory unchanged\n");
 }
 
-/* ── 7. enter_shop: insufficient coins → 1 ──────────────────────────── */
+/* ── 7. enter_shop: opens shop even with no coins ────────────────────── */
 static void test_enter_shop_insufficient_coins(void)
 {
     game_state_t state;
@@ -134,16 +136,18 @@ static void test_enter_shop_insufficient_coins(void)
     int          inv_before;
 
     turn_manager_init(&state);
-    state.player.coins = SHOP_ITEM_COST - 1;  /* one short */
+    state.player.coins = 0;   /* no coins at all */
     coins_before        = state.player.coins;
     inv_before          = state.player.inventory_count;
 
     map_set_tile(&state.map, 1, 0, TILE_SHOP);
-    assert(turn_manager_enter_shop(&state, 1, 0) == 1);
+    assert(turn_manager_enter_shop(&state, 1, 0) == TURN_SHOP_OPEN);
 
-    assert(state.player.coins == coins_before);       /* unchanged */
-    assert(state.player.inventory_count == inv_before); /* no item */
-    printf("[PASS] enter_shop: insufficient coins returns 1, no change\n");
+    /* Shop still opens; buy/sell restricted later by shop_buy/sell */
+    assert(state.shop.active == 1);
+    assert(state.player.coins == coins_before);
+    assert(state.player.inventory_count == inv_before);
+    printf("[PASS] enter_shop: shop opens even with 0 coins\n");
 }
 
 /* ── 8. enter_shop: removes shop tile on purchase ────────────────────── */
@@ -170,11 +174,12 @@ static void test_enter_shop_null(void)
     printf("[PASS] enter_shop: NULL guard returns -1\n");
 }
 
-/* ── 10. player_act: bumping into shop with coins deducts coins ──────── */
+/* ── 10. player_act: bumping into shop opens shop UI (no coin deduction) */
 static void test_player_act_shop_deducts_coins(void)
 {
     game_state_t state;
     int          coins_before;
+    int          turn_result;
 
     turn_manager_init(&state);
     state.player.coins = SHOP_ITEM_COST + 10;
@@ -186,11 +191,13 @@ static void test_player_act_shop_deducts_coins(void)
                  state.player.y - 1,
                  TILE_SHOP);
 
-    turn_manager_player_act(&state, ACTION_MOVE_UP);
+    turn_result = turn_manager_player_act(&state, ACTION_MOVE_UP);
 
-    assert(state.player.coins == coins_before - SHOP_ITEM_COST);
-    printf("[PASS] player_act: shop interaction deducts %d coins\n",
-           SHOP_ITEM_COST);
+    /* Shop opens — no coin deduction on entry */
+    assert(turn_result == TURN_SHOP_OPEN);
+    assert(state.shop.active == 1);
+    assert(state.player.coins == coins_before);
+    printf("[PASS] player_act: shop bump opens shop UI, coins unchanged\n");
 }
 
 /* ── main ─────────────────────────────────────────────────────────────── */

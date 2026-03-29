@@ -13,13 +13,15 @@
 
 /* ── Tile → ASCII character lookup ───────────────────────────────────── */
 static const char TILE_CHARS[] = {
-    [TILE_FLOOR]   = '.',
-    [TILE_WALL]    = '#',
-    [TILE_PLAYER]  = 'P',
-    [TILE_MONSTER] = 'M',
-    [TILE_CHEST]   = 'C',
-    [TILE_COIN]    = '$',
-    [TILE_SHOP]    = 'S'
+    [TILE_FLOOR]      = '.',
+    [TILE_WALL]       = '#',
+    [TILE_PLAYER]     = 'P',
+    [TILE_MONSTER]    = 'M',
+    [TILE_CHEST]      = 'C',
+    [TILE_COIN]       = '$',
+    [TILE_SHOP]       = 'S',
+    [TILE_CHEST_OPEN] = 'c',
+    [TILE_SHOP_OPEN]  = 's'
 };
 
 /* ── Public API implementation ────────────────────────────────────────── */

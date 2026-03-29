@@ -167,4 +167,20 @@ int player_equip(player_t *p_player, int inv_idx);
  */
 int player_unequip(player_t *p_player, int slot);
 
+/**
+ * @brief Remove the item at inv_idx from the player's inventory.
+ *
+ * Steps:
+ *  1. If the item is currently equipped, unequip it first (stat bonus removed).
+ *  2. Shift inventory[inv_idx+1 .. inventory_count-1] left by one.
+ *  3. Decrement inventory_count.
+ *  4. Update all equipment slot indices that pointed to items AFTER inv_idx
+ *     (their indices decrease by one after the shift).
+ *
+ * @param p_player  Player; must not be NULL.
+ * @param inv_idx   Index [0, inventory_count); item to remove.
+ * @return 0 on success, -1 on error (NULL, out-of-range index).
+ */
+int player_remove_item(player_t *p_player, int inv_idx);
+
 #endif /* PLAYER_H */

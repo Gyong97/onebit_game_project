@@ -44,6 +44,7 @@ typedef struct {
     int         def_bonus;            /* > 0 for ITEM_ARMOR  */
     int         hp_restore;           /* > 0 for ITEM_POTION */
     char        name[ITEM_NAME_MAX];  /* human-readable label */
+    int         buy_price;            /* coins to buy from shop; 0 = cannot be sold */
 } item_t;
 
 #endif /* ITEM_H */

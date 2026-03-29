@@ -49,6 +49,7 @@ int input_get_action(action_t *p_action)
         case 'a': case 'A': *p_action = ACTION_MOVE_LEFT;  break;
         case 'd': case 'D': *p_action = ACTION_MOVE_RIGHT; break;
         case 'q': case 'Q': *p_action = ACTION_QUIT;       break;
+        case ' ':            *p_action = ACTION_SPACE;      break;
         default:             *p_action = ACTION_NONE;       break;
     }
     return 0;

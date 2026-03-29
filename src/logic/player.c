@@ -98,6 +98,42 @@ int player_add_item(player_t *p_player, const item_t *p_item)
     return 0;
 }
 
+int player_remove_item(player_t *p_player, int inv_idx)
+{
+    int i;
+    int slot;
+
+    if (p_player == NULL) {
+        return -1;
+    }
+    if (inv_idx < 0 || inv_idx >= p_player->inventory_count) {
+        return -1;
+    }
+
+    /* Step 1: unequip the item if it is currently in an equipment slot */
+    for (slot = 0; slot < EQUIP_SLOT_COUNT; slot++) {
+        if (p_player->equipment[slot] == inv_idx) {
+            player_unequip(p_player, slot);
+            break;
+        }
+    }
+
+    /* Step 2: shift items after inv_idx left by one */
+    for (i = inv_idx; i < p_player->inventory_count - 1; i++) {
+        p_player->inventory[i] = p_player->inventory[i + 1];
+    }
+    p_player->inventory_count--;
+
+    /* Step 3: fix equipment slot indices that pointed past the removed item */
+    for (slot = 0; slot < EQUIP_SLOT_COUNT; slot++) {
+        if (p_player->equipment[slot] > inv_idx) {
+            p_player->equipment[slot]--;
+        }
+    }
+
+    return 0;
+}
+
 /* ── Public API ───────────────────────────────────────────────────────── */
 
 int player_init_typed(player_t *p_player, playable_type_t class_type)

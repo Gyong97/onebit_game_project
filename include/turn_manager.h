@@ -23,6 +23,7 @@
 
 /* ── Turn result codes ────────────────────────────────────────────────── */
 #define TURN_GAME_OVER   2   /* player HP reached 0 — game ends           */
+#define TURN_SHOP_OPEN   3   /* shop was entered — monster turn is skipped */
 
 /* ── Spawn constants ─────────────────────────────────────────────────── */
 #define CHEST_SPAWN_PCT  15  /* % chance per interior column on new row   */
@@ -38,14 +39,16 @@
 #include "player.h"        /* player_t */
 #include "map.h"           /* map_t */
 #include "input.h"         /* action_t */
+#include "shop.h"          /* shop_state_t */
 
 /**
  * @brief Complete game state — the single source of truth.
  */
 typedef struct {
-    map_t     map;                          /* viewport tile grid */
-    player_t  player;                       /* player entity      */
-    monster_t monsters[MONSTER_MAX_COUNT];  /* monster pool       */
+    map_t        map;                          /* viewport tile grid */
+    player_t     player;                       /* player entity      */
+    monster_t    monsters[MONSTER_MAX_COUNT];  /* monster pool       */
+    shop_state_t shop;                         /* in-shop UI state   */
 } game_state_t;
 
 /* ── Turn manager API ─────────────────────────────────────────────────── */
@@ -152,21 +155,19 @@ int turn_manager_spawn_row(game_state_t *p_state);
 int turn_manager_alive_count(const game_state_t *p_state);
 
 /**
- * @brief Enter a shop at (x, y): spend coins to receive a random item.
+ * @brief Enter a shop at (x, y): open the shop UI mode.
  *
- * If the player has >= SHOP_ITEM_COST coins:
- *   - Deducts SHOP_ITEM_COST from player.coins.
- *   - Picks a random item from item_db and adds it to inventory.
- *   - Replaces TILE_SHOP at (x, y) with TILE_FLOOR.
- *   - Returns 0.
- * If the player has < SHOP_ITEM_COST coins:
- *   - Does nothing.
- *   - Returns 1 (insufficient funds).
+ * - Sets TILE_SHOP_OPEN at (x, y) (one-time visit; blocks re-entry).
+ * - Calls shop_open() to initialise the in-shop state.
+ * - Returns TURN_SHOP_OPEN so the caller can skip the monster turn.
+ *
+ * Actual buy/sell transactions are handled by shop_buy() / shop_sell()
+ * via the main game loop while shop.active == 1.
  *
  * @param p_state  Game state; must not be NULL.
  * @param x        Column of the shop tile.
  * @param y        Row    of the shop tile.
- * @return 0 (purchased), 1 (insufficient coins), -1 (error).
+ * @return TURN_SHOP_OPEN on success, -1 on error.
  */
 int turn_manager_enter_shop(game_state_t *p_state, int x, int y);
 

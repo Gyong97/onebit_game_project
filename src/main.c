@@ -14,6 +14,8 @@
 #include "turn_manager.h"
 #include "player.h"       /* EQUIP_SLOT_* */
 #include "save_manager.h" /* save_data_t, save_manager_* */
+#include "shop.h"         /* shop_buy, shop_sell, shop_close, SHOP_PAGE_* */
+#include "item_db.h"      /* ITEM_DB_COUNT, item_db_get */
 
 /* ── Helpers ──────────────────────────────────────────────────────────── */
 
@@ -132,6 +134,101 @@ int main(void)
 
         turn_result = turn_manager_player_act(&state, action);
 
+        /* ── Shop UI mode ────────────────────────────────────────────── */
+        if (turn_result == TURN_SHOP_OPEN) {
+            snprintf(frame.message, MSG_BUF_SIZE,
+                     "SHOP  [W/S]=select  [A/D]=buy<>sell  [SPC]=confirm  [Q]=exit");
+            /* Inner shop loop: runs until player presses Q to exit */
+            while (state.shop.active) {
+                renderer_clear();
+                build_frame(&state, &save, &frame);
+                /* Print shop UI below the HUD */
+                if (state.shop.page == SHOP_PAGE_BUY) {
+                    int    i;
+                    item_t it;
+                    printf("=== SHOP: BUY ===\n");
+                    for (i = 0; i < ITEM_DB_COUNT; i++) {
+                        item_db_get(i, &it);
+                        printf("%s %-12s  %2d coins\n",
+                               (i == state.shop.buy_cursor) ? ">" : " ",
+                               it.name, it.buy_price);
+                    }
+                    printf("Coins: %d\n", state.player.coins);
+                } else {
+                    int i;
+                    printf("=== SHOP: SELL ===\n");
+                    if (state.player.inventory_count == 0) {
+                        printf("  (no items)\n");
+                    } else {
+                        for (i = 0; i < state.player.inventory_count; i++) {
+                            int sp = state.player.inventory[i].buy_price
+                                     / SHOP_SELL_RATIO;
+                            if (sp < 1) sp = 1;
+                            printf("%s %-12s  sell %d coins\n",
+                                   (i == state.shop.sell_cursor) ? ">" : " ",
+                                   state.player.inventory[i].name, sp);
+                        }
+                    }
+                    printf("Coins: %d\n", state.player.coins);
+                }
+                fflush(stdout);
+
+                if (input_get_action(&action) != 0) {
+                    shop_close(&state.shop);
+                    break;
+                }
+                switch (action) {
+                    case ACTION_QUIT:
+                        shop_close(&state.shop);
+                        break;
+                    case ACTION_MOVE_UP:
+                        shop_nav_up(&state.shop);
+                        break;
+                    case ACTION_MOVE_DOWN: {
+                        int count = (state.shop.page == SHOP_PAGE_BUY)
+                                    ? ITEM_DB_COUNT
+                                    : state.player.inventory_count;
+                        shop_nav_down(&state.shop, count);
+                        break;
+                    }
+                    case ACTION_MOVE_LEFT:
+                    case ACTION_MOVE_RIGHT:
+                        shop_switch_page(&state.shop);
+                        break;
+                    case ACTION_SPACE:
+                        if (state.shop.page == SHOP_PAGE_BUY) {
+                            int r = shop_buy(&state.shop, &state.player);
+                            if (r == SHOP_OK) {
+                                snprintf(frame.message, MSG_BUF_SIZE,
+                                         "Bought: %s",
+                                         state.player.inventory[
+                                             state.player.inventory_count - 1
+                                         ].name);
+                            } else if (r == SHOP_INSUFFICIENT) {
+                                snprintf(frame.message, MSG_BUF_SIZE,
+                                         "Not enough coins!");
+                            } else if (r == SHOP_INVENTORY_FULL) {
+                                snprintf(frame.message, MSG_BUF_SIZE,
+                                         "Inventory full!");
+                            }
+                        } else {
+                            int r = shop_sell(&state.shop, &state.player);
+                            if (r == SHOP_OK) {
+                                snprintf(frame.message, MSG_BUF_SIZE,
+                                         "Item sold!");
+                            } else if (r == SHOP_NOTHING) {
+                                snprintf(frame.message, MSG_BUF_SIZE,
+                                         "Nothing to sell.");
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            continue; /* resume outer game loop */
+        }
+
         if (turn_result == TURN_GAME_OVER) {
             /* Update and persist save data before showing game over */
             save_manager_update_on_death(&save, &state);
@@ -168,19 +265,8 @@ int main(void)
                              "Coin! (%d total)", state.player.coins);
                     break;
                 case TILE_SHOP:
-                    if (state.player.coins >= SHOP_ITEM_COST) {
-                        snprintf(frame.message, MSG_BUF_SIZE,
-                                 "Shop! Bought: %s  (%d coins left)",
-                                 state.player.inventory_count > 0
-                                 ? state.player.inventory[
-                                       state.player.inventory_count - 1].name
-                                 : "?",
-                                 state.player.coins);
-                    } else {
-                        snprintf(frame.message, MSG_BUF_SIZE,
-                                 "Shop! Need %d coins (have %d).",
-                                 SHOP_ITEM_COST, state.player.coins);
-                    }
+                    snprintf(frame.message, MSG_BUF_SIZE,
+                             "Shop opened! (handled by shop UI)");
                     break;
                 default:
                     break;

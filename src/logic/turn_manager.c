@@ -21,6 +21,7 @@
 #include <math.h>     /* pow()  — depth-scaled monster stats */
 #include "turn_manager.h"
 #include "item_db.h"    /* item_db_get(), ITEM_DB_COUNT */
+#include "shop.h"       /* shop_open() */
 
 /* ── Internal helpers ─────────────────────────────────────────────────── */
 
@@ -151,9 +152,10 @@ int turn_manager_player_act(game_state_t *p_state, action_t action)
         }
         /* fall through to monster turn */
     } else if (move_result == PLAYER_MOVE_SHOP) {
-        turn_manager_enter_shop(p_state, tx, ty);
-        /* insufficient coins → return 1 is ignored; shop stays; monsters act */
-        /* fall through to monster turn */
+        if (turn_manager_enter_shop(p_state, tx, ty) < 0) {
+            return -1;
+        }
+        return TURN_SHOP_OPEN;  /* monster turn is skipped; main loop runs shop UI */
     }
 
     /* Player moved or acted: handle scroll then run monster turn */
@@ -347,26 +349,17 @@ int turn_manager_spawn_row(game_state_t *p_state)
 
 int turn_manager_enter_shop(game_state_t *p_state, int x, int y)
 {
-    item_t item;
-    int    id;
-
     if (p_state == NULL) {
         return -1;
     }
 
-    if (p_state->player.coins < SHOP_ITEM_COST) {
-        return 1; /* insufficient funds */
-    }
-
-    /* Deduct cost, pick a random item, add to inventory */
-    p_state->player.coins -= SHOP_ITEM_COST;
-    id = rand() % ITEM_DB_COUNT;
-    item_db_get(id, &item);
-    player_add_item(&p_state->player, &item);
-
-    /* Mark shop as visited (stays on map, no re-interaction) */
+    /* Mark shop as visited (one-time; blocks re-entry via TILE_SHOP_OPEN) */
     map_set_tile(&p_state->map, x, y, TILE_SHOP_OPEN);
-    return 0;
+
+    /* Open the shop UI state */
+    shop_open(&p_state->shop, x, y);
+
+    return TURN_SHOP_OPEN;
 }
 
 int turn_manager_open_chest(game_state_t *p_state, int x, int y)

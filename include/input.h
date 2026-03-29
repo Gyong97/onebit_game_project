@@ -20,7 +20,8 @@ typedef enum {
     ACTION_MOVE_DOWN  = 2, /* 'S' — move player one cell down */
     ACTION_MOVE_LEFT  = 3, /* 'A' — move player one cell left */
     ACTION_MOVE_RIGHT = 4, /* 'D' — move player one cell right */
-    ACTION_QUIT       = 5  /* 'Q' — request game exit */
+    ACTION_QUIT       = 5, /* 'Q' — request game exit / close shop */
+    ACTION_SPACE      = 6  /* ' ' — confirm (buy/sell in shop; pass turn in game) */
 } action_t;
 
 /* ── Input API ────────────────────────────────────────────────────────── */

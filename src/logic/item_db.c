@@ -15,22 +15,22 @@
 /* ── Static item table ────────────────────────────────────────────────── */
 
 static const item_t g_item_table[ITEM_DB_COUNT] = {
-    /* id=0  WEAPON  Short Sword */
-    { ITEM_WEAPON, 5,  0,  0,  "Short Sword" },
-    /* id=1  WEAPON  Battle Axe  */
-    { ITEM_WEAPON, 8,  0,  0,  "Battle Axe"  },
-    /* id=2  ARMOR   Chain Mail  */
-    { ITEM_ARMOR,  0,  3,  0,  "Chain Mail"  },
-    /* id=3  ARMOR   Plate Mail  */
-    { ITEM_ARMOR,  0,  5,  0,  "Plate Mail"  },
-    /* id=4  HELMET  Iron Helm   */
-    { ITEM_HELMET, 0,  2,  0,  "Iron Helm"   },
-    /* id=5  HELMET  Great Helm  */
-    { ITEM_HELMET, 0,  4,  0,  "Great Helm"  },
-    /* id=6  POTION  Health Pot  */
-    { ITEM_POTION, 0,  0, 20,  "Health Pot"  },
-    /* id=7  POTION  Elixir      */
-    { ITEM_POTION, 0,  0, 40,  "Elixir"      }
+    /* id=0  WEAPON  Short Sword  — atk+5, buy 8 */
+    { ITEM_WEAPON, 5, 0,  0,  "Short Sword",  8 },
+    /* id=1  WEAPON  Battle Axe   — atk+8, buy 12 */
+    { ITEM_WEAPON, 8, 0,  0,  "Battle Axe",  12 },
+    /* id=2  ARMOR   Chain Mail   — def+3, buy 6 */
+    { ITEM_ARMOR,  0, 3,  0,  "Chain Mail",   6 },
+    /* id=3  ARMOR   Plate Mail   — def+5, buy 10 */
+    { ITEM_ARMOR,  0, 5,  0,  "Plate Mail",  10 },
+    /* id=4  HELMET  Iron Helm    — def+2, buy 5 */
+    { ITEM_HELMET, 0, 2,  0,  "Iron Helm",    5 },
+    /* id=5  HELMET  Great Helm   — def+4, buy 8 */
+    { ITEM_HELMET, 0, 4,  0,  "Great Helm",   8 },
+    /* id=6  POTION  Health Pot   — hp+20, buy 5 */
+    { ITEM_POTION, 0, 0, 20,  "Health Pot",   5 },
+    /* id=7  POTION  Elixir       — hp+40, buy 9 */
+    { ITEM_POTION, 0, 0, 40,  "Elixir",       9 }
 };
 
 /* ── Public API ───────────────────────────────────────────────────────── */
