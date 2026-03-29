@@ -10,9 +10,9 @@
 #define RENDERER_H
 
 /* ── Map dimensions ──────────────────────────────────────────────────── */
-#define MAP_WIDTH    11   /* columns (border walls at x=0 and x=MAP_WIDTH-1) */
-#define MAP_HEIGHT   20   /* visible viewport rows */
-#define MAP_BUFFER_H 10   /* invisible pre-load buffer rows above visible area */
+#define MAP_WIDTH    13   /* columns (border walls at x=0 and x=MAP_WIDTH-1) */
+#define MAP_HEIGHT   16   /* visible viewport rows */
+#define MAP_BUFFER_H  9   /* invisible pre-load buffer rows above visible area */
 #define MAP_TOTAL_H  (MAP_HEIGHT + MAP_BUFFER_H) /* total rows in map_t */
 
 /* ── Message buffer size ──────────────────────────────────────────────── */

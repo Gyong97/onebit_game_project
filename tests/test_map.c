@@ -263,13 +263,13 @@ static int test_map_set_tile_oob(void)
 
 /* ── Phase 4 tests ───────────────────────────────────────────────────── */
 
-/* MAP_WIDTH == 11, MAP_HEIGHT == 20, MAP_BUFFER_H == 10, MAP_TOTAL_H == 30 */
+/* MAP_WIDTH == 13, MAP_HEIGHT == 16, MAP_BUFFER_H == 9, MAP_TOTAL_H == 25 */
 static int test_map_dimensions(void)
 {
-    TEST_ASSERT(MAP_WIDTH    == 11, "MAP_WIDTH must be 11");
-    TEST_ASSERT(MAP_HEIGHT   == 20, "MAP_HEIGHT must be 20");
-    TEST_ASSERT(MAP_BUFFER_H == 10, "MAP_BUFFER_H must be 10");
-    TEST_ASSERT(MAP_TOTAL_H  == 30, "MAP_TOTAL_H must be 30 (MAP_HEIGHT + MAP_BUFFER_H)");
+    TEST_ASSERT(MAP_WIDTH    == 13, "MAP_WIDTH must be 13");
+    TEST_ASSERT(MAP_HEIGHT   == 16, "MAP_HEIGHT must be 16");
+    TEST_ASSERT(MAP_BUFFER_H ==  9, "MAP_BUFFER_H must be 9");
+    TEST_ASSERT(MAP_TOTAL_H  == 25, "MAP_TOTAL_H must be 25 (MAP_HEIGHT + MAP_BUFFER_H)");
     return 0;
 }
 

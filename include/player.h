@@ -49,8 +49,8 @@
 #define PLAYER_MOVE_COIN   4  /* player stepped onto a coin  — collect triggered */
 #define PLAYER_MOVE_SHOP   5  /* player bumped into a shop   — buy triggered     */
 
-/* 5-buffer scroll threshold: scroll fires when player.y < SCROLL_BUFFER */
-#define SCROLL_BUFFER 5
+/* 8-buffer scroll threshold: scroll fires when player.y < SCROLL_BUFFER */
+#define SCROLL_BUFFER 8
 
 /* Starting position: horizontally centred, second row from bottom */
 #define PLAYER_INIT_X  4

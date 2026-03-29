@@ -79,16 +79,16 @@ static int test_player_move_up(void)
 {
     player_t p;
     map_t map;
-    /* y=17: above scroll zone (trigger_y = MAP_BUFFER_H+SCROLL_BUFFER = 15),
-     * so moving up to y=16 must NOT fire scroll. */
+    /* y=19: above scroll zone (trigger_y = MAP_BUFFER_H+SCROLL_BUFFER = 17),
+     * so moving up to y=18 must NOT fire scroll. */
     TEST_ASSERT(player_init(&p) == 0, "player_init should return 0");
     TEST_ASSERT(make_map(&map) == 0,  "map_init should return 0");
     p.x = 4;
-    p.y = 17;
-    map_set_tile(&map, 4, 17, TILE_PLAYER);
+    p.y = 19;
+    map_set_tile(&map, 4, 19, TILE_PLAYER);
     TEST_ASSERT(player_move(&p, ACTION_MOVE_UP, &map) == 0,
                 "move up on floor should return 0");
-    TEST_ASSERT(p.y == 16, "y must decrease by 1 after move up");
+    TEST_ASSERT(p.y == 18, "y must decrease by 1 after move up");
     TEST_ASSERT(p.x == 4,  "x must not change after move up");
     return 0;
 }
@@ -227,10 +227,10 @@ static int test_player_scroll_multiple(void)
     return 0;
 }
 
-/* ── Test cases: 5-buffer scroll ─────────────────────────────────────── */
+/* ── Test cases: 8-buffer scroll ─────────────────────────────────────── */
 
 /*
- * 5-buffer rule: when player moves UP and enters the scroll zone
+ * 8-buffer rule: when player moves UP and enters the scroll zone
  * (new_y < MAP_BUFFER_H + SCROLL_BUFFER), map_scroll() fires automatically
  * and player.y is pushed back to the trigger boundary.
  *
@@ -245,7 +245,7 @@ static int test_player_5buffer_scroll_triggers(void)
     long     prev_scroll;
     int      trigger_y; /* y boundary: scroll fires when player.y < trigger_y */
 
-    trigger_y = MAP_BUFFER_H + SCROLL_BUFFER; /* = 15 */
+    trigger_y = MAP_BUFFER_H + SCROLL_BUFFER; /* = 17 */
 
     TEST_ASSERT(player_init(&p) == 0, "player_init should return 0");
     TEST_ASSERT(make_map(&map) == 0,  "map_init should return 0");
@@ -270,7 +270,7 @@ static int test_player_5buffer_scroll_triggers(void)
  * to the coin tile, coin tile becomes TILE_PLAYER, old tile becomes
  * TILE_FLOOR.
  *
- * Uses y=17 → y=16 (both > trigger_y=15) to avoid triggering 5-buffer scroll.
+ * Uses y=19 → y=18 (both > trigger_y=17) to avoid triggering 8-buffer scroll.
  */
 static int test_player_coin_walkable(void)
 {
@@ -281,18 +281,18 @@ static int test_player_coin_walkable(void)
     TEST_ASSERT(player_init(&p) == 0, "player_init should return 0");
     TEST_ASSERT(make_map(&map) == 0,  "map_init should return 0");
     p.x = 4;
-    p.y = 17;
-    map_set_tile(&map, 4, 17, TILE_PLAYER);
-    map_set_tile(&map, 4, 16, TILE_COIN); /* coin directly above player */
+    p.y = 19;
+    map_set_tile(&map, 4, 19, TILE_PLAYER);
+    map_set_tile(&map, 4, 18, TILE_COIN); /* coin directly above player */
 
     TEST_ASSERT(player_move(&p, ACTION_MOVE_UP, &map) == 0,
                 "stepping onto TILE_COIN must return 0 (passable)");
-    TEST_ASSERT(p.y == 16,
+    TEST_ASSERT(p.y == 18,
                 "player must move to coin tile position");
-    TEST_ASSERT(map_get_tile(&map, 4, 16, &tile) == 0, "get tile must succeed");
+    TEST_ASSERT(map_get_tile(&map, 4, 18, &tile) == 0, "get tile must succeed");
     TEST_ASSERT(tile == TILE_PLAYER,
                 "coin tile must become TILE_PLAYER after collection");
-    TEST_ASSERT(map_get_tile(&map, 4, 17, &tile) == 0, "get old tile must succeed");
+    TEST_ASSERT(map_get_tile(&map, 4, 19, &tile) == 0, "get old tile must succeed");
     TEST_ASSERT(tile == TILE_FLOOR,
                 "old player tile must become TILE_FLOOR after move");
     return 0;
