@@ -13,8 +13,9 @@
  *
  * No stdio output: pure game-logic module per architecture constraints.
  */
-#include <stddef.h>  /* NULL */
+#include <stddef.h>    /* NULL */
 #include "player.h"
+#include "playable_db.h"  /* playable_db_get, playable_def_t */
 
 /**
  * @brief Determine the equipment slot for an item type.
@@ -99,17 +100,22 @@ int player_add_item(player_t *p_player, const item_t *p_item)
 
 /* ── Public API ───────────────────────────────────────────────────────── */
 
-int player_init(player_t *p_player)
+int player_init_typed(player_t *p_player, playable_type_t class_type)
 {
+    playable_def_t def;
+    int            i;
+
     if (p_player == NULL) {
         return -1;
     }
-    int i;
+    if (playable_db_get(class_type, &def) != 0) {
+        return -1; /* invalid class */
+    }
 
-    p_player->hp              = PLAYER_INIT_HP;
-    p_player->max_hp          = PLAYER_INIT_MAXHP;
-    p_player->atk             = PLAYER_INIT_ATK;
-    p_player->def             = PLAYER_INIT_DEF;
+    p_player->hp              = def.init_hp;
+    p_player->max_hp          = def.init_max_hp;
+    p_player->atk             = def.init_atk;
+    p_player->def             = def.init_def;
     p_player->x               = PLAYER_INIT_X;
     p_player->y               = PLAYER_INIT_Y;
     p_player->coins           = 0;
@@ -120,6 +126,11 @@ int player_init(player_t *p_player)
         p_player->equipment[i] = -1;
     }
     return 0;
+}
+
+int player_init(player_t *p_player)
+{
+    return player_init_typed(p_player, PLAYABLE_WARRIOR);
 }
 
 int player_gain_xp(player_t *p_player, int amount)

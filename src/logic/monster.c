@@ -18,36 +18,32 @@
 #include <stddef.h>   /* NULL  */
 #include <stdlib.h>   /* abs() */
 #include "monster.h"
+#include "monster_db.h"  /* monster_db_get, monster_def_t */
 
 /* ── Public API ───────────────────────────────────────────────────────── */
 
 int monster_init_typed(monster_t *p_monster, int x, int y,
                        monster_type_t type)
 {
+    monster_def_t def;
+
     if (p_monster == NULL) {
         return -1;
     }
+
+    /* Resolve stats from the monster database (data-driven, no switch). */
+    if (monster_db_get(type, &def) != 0) {
+        /* Unknown type: fall back to GOBLIN defaults. */
+        monster_db_get(MONSTER_TYPE_GOBLIN, &def);
+        type = MONSTER_TYPE_GOBLIN;
+    }
+
     p_monster->x     = x;
     p_monster->y     = y;
+    p_monster->hp    = def.base_hp;
+    p_monster->atk   = def.base_atk;
     p_monster->alive = 1;
     p_monster->type  = type;
-
-    switch (type) {
-        case MONSTER_TYPE_SLIME:
-            p_monster->hp  = SLIME_INIT_HP;
-            p_monster->atk = SLIME_INIT_ATK;
-            break;
-        case MONSTER_TYPE_BAT:
-            p_monster->hp  = BAT_INIT_HP;
-            p_monster->atk = BAT_INIT_ATK;
-            break;
-        case MONSTER_TYPE_GOBLIN:
-        default:
-            p_monster->hp  = GOBLIN_INIT_HP;
-            p_monster->atk = GOBLIN_INIT_ATK;
-            p_monster->type = MONSTER_TYPE_GOBLIN;
-            break;
-    }
     return 0;
 }
 

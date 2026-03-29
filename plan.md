@@ -10,10 +10,10 @@
 - [x] 맵에 무작위 엔티티 생성 시
 
 ## 2단계: 아이템/몬스터 사전화(Dictionary) 및 확장성 개선
-- [ ] 구현한 기본 몬스터 고블린, 박쥐 등을 game_spec.md에 정리된 내용에 따라 game_monster.md에 정의
-- [ ] 아이템을 기본 아이템을 정의하여 game_spec.md에 따라 game_use_item.md와 game_equip_item.md 에 정의
-- [ ] 플레이어 기본 스펙을 정의하여 game_playable.md에 정의
-- [ ] 이후 몬스터, 아이템, 플레이어 직업군 추가가 용이하도록 코드 확장성 개선
+- [x] 구현한 기본 몬스터 고블린, 박쥐 등을 game_spec.md에 정리된 내용에 따라 game_monster.md에 정의
+- [x] 아이템을 기본 아이템을 정의하여 game_spec.md에 따라 game_use_item.md와 game_equip_item.md 에 정의
+- [x] 플레이어 기본 스펙을 정의하여 game_playable.md에 정의
+- [x] 이후 몬스터, 아이템, 플레이어 직업군 추가가 용이하도록 코드 확장성 개선
 
 ## 3단계: 상점 기능 구현
 - [ ] 상점 입장/퇴장 기능 구현

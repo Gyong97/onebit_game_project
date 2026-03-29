@@ -17,15 +17,16 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "map.h"    /* map_t, MAP_WIDTH, VIEWPORT_H */
-#include "input.h"  /* action_t */
-#include "item.h"   /* item_t, INVENTORY_MAX */
+#include "map.h"         /* map_t, MAP_WIDTH, VIEWPORT_H */
+#include "input.h"       /* action_t */
+#include "item.h"        /* item_t, INVENTORY_MAX */
+#include "playable_db.h" /* playable_type_t, WARRIOR_INIT_* */
 
-/* ── Initial player stats (per game spec) ────────────────────────────── */
-#define PLAYER_INIT_HP    100
-#define PLAYER_INIT_MAXHP 100
-#define PLAYER_INIT_ATK    10
-#define PLAYER_INIT_DEF     0   /* base defense (increases via armor equip) */
+/* ── Initial player stats — alias to the default (Warrior) class stats ── */
+#define PLAYER_INIT_HP    WARRIOR_INIT_HP
+#define PLAYER_INIT_MAXHP WARRIOR_INIT_MAXHP
+#define PLAYER_INIT_ATK   WARRIOR_INIT_ATK
+#define PLAYER_INIT_DEF   WARRIOR_INIT_DEF
 
 /* ── Leveling constants (per game spec §4) ───────────────────────────── */
 #define PLAYER_INIT_LEVEL     1   /* starting level                            */
@@ -90,12 +91,27 @@ typedef struct {
 int player_gain_xp(player_t *p_player, int amount);
 
 /**
- * @brief Initialise a player with default stats and starting position.
+ * @brief Initialise a player with default stats (Warrior class) and starting position.
+ *
+ * Equivalent to player_init_typed(p_player, PLAYABLE_WARRIOR).
  *
  * @param p_player  Output player to initialise; must not be NULL.
  * @return 0 on success, -1 if p_player is NULL.
  */
 int player_init(player_t *p_player);
+
+/**
+ * @brief Initialise a player with the stats of the specified class.
+ *
+ * Looks up the class definition from playable_db and applies its initial
+ * stats (hp, max_hp, atk, def). All other fields (position, inventory,
+ * equipment) are set to their fixed defaults.
+ *
+ * @param p_player    Output player to initialise; must not be NULL.
+ * @param class_type  Class from the playable_db [0, PLAYABLE_TYPE_COUNT).
+ * @return 0 on success, -1 on error (NULL pointer or invalid class).
+ */
+int player_init_typed(player_t *p_player, playable_type_t class_type);
 
 /**
  * @brief Attempt to move the player one cell in the given direction.
