@@ -261,6 +261,63 @@ static int test_map_set_tile_oob(void)
     return 0;
 }
 
+/* ── Phase 4 tests ───────────────────────────────────────────────────── */
+
+/* MAP_WIDTH == 11, MAP_HEIGHT == 20, MAP_BUFFER_H == 10, MAP_TOTAL_H == 30 */
+static int test_map_dimensions(void)
+{
+    TEST_ASSERT(MAP_WIDTH    == 11, "MAP_WIDTH must be 11");
+    TEST_ASSERT(MAP_HEIGHT   == 20, "MAP_HEIGHT must be 20");
+    TEST_ASSERT(MAP_BUFFER_H == 10, "MAP_BUFFER_H must be 10");
+    TEST_ASSERT(MAP_TOTAL_H  == 30, "MAP_TOTAL_H must be 30 (MAP_HEIGHT + MAP_BUFFER_H)");
+    return 0;
+}
+
+/* map_get_tile must accept y up to MAP_TOTAL_H-1 (all 30 rows accessible) */
+static int test_map_total_height_accessible(void)
+{
+    map_t       map;
+    tile_type_t tile;
+
+    TEST_ASSERT(map_init(&map) == 0, "map_init should return 0");
+
+    /* Last row of total map must be accessible */
+    TEST_ASSERT(map_get_tile(&map, 1, MAP_TOTAL_H - 1, &tile) == 0,
+                "map_get_tile y=MAP_TOTAL_H-1 must succeed");
+
+    /* One beyond must fail */
+    TEST_ASSERT(map_get_tile(&map, 1, MAP_TOTAL_H, &tile) == -1,
+                "map_get_tile y=MAP_TOTAL_H must return -1 (out of bounds)");
+    return 0;
+}
+
+/* After scroll, new top row (row 0) must always have at least one passable cell */
+static int test_map_scroll_row_always_passable(void)
+{
+    map_t       map;
+    tile_type_t tile;
+    int         s;
+    int         c;
+    int         has_floor;
+
+    srand(12345);
+    TEST_ASSERT(map_init(&map) == 0, "map_init should return 0");
+
+    for (s = 0; s < 200; s++) {
+        TEST_ASSERT(map_scroll(&map) == 0, "map_scroll should return 0");
+        has_floor = 0;
+        for (c = 1; c < MAP_WIDTH - 1; c++) {
+            if (map_get_tile(&map, c, 0, &tile) == 0 && tile == TILE_FLOOR) {
+                has_floor = 1;
+                break;
+            }
+        }
+        TEST_ASSERT(has_floor,
+                    "new row after scroll must always have at least one TILE_FLOOR");
+    }
+    return 0;
+}
+
 /* ── Test runner ──────────────────────────────────────────────────────── */
 
 typedef struct {
@@ -288,6 +345,9 @@ int main(void)
         { "test_map_set_tile_valid",                 test_map_set_tile_valid                 },
         { "test_map_set_tile_null_map",              test_map_set_tile_null_map              },
         { "test_map_set_tile_oob",                   test_map_set_tile_oob                   },
+        { "test_map_dimensions",                     test_map_dimensions                     },
+        { "test_map_total_height_accessible",        test_map_total_height_accessible        },
+        { "test_map_scroll_row_always_passable",     test_map_scroll_row_always_passable     },
     };
 
     printf("=== Map Tests ===\n");

@@ -159,8 +159,8 @@ static void test_enter_shop_removes_tile(void)
     turn_manager_enter_shop(&state, 3, 0);
 
     map_get_tile(&state.map, 3, 0, &tile);
-    assert(tile == TILE_FLOOR);
-    printf("[PASS] enter_shop: shop tile replaced with TILE_FLOOR on purchase\n");
+    assert(tile == TILE_SHOP_OPEN);
+    printf("[PASS] enter_shop: shop tile replaced with TILE_SHOP_OPEN on purchase\n");
 }
 
 /* ── 9. enter_shop: NULL guard ───────────────────────────────────────── */

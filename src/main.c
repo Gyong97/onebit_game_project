@@ -30,9 +30,10 @@ static void build_frame(const game_state_t *p_state,
     int             slot;
     const char     *name;
 
+    /* Copy only the visible rows (skip MAP_BUFFER_H invisible pre-load rows). */
     for (r = 0; r < MAP_HEIGHT; r++) {
         for (c = 0; c < MAP_WIDTH; c++) {
-            p_frame->tiles[r][c] = p_state->map.rows[r][c];
+            p_frame->tiles[r][c] = p_state->map.rows[MAP_BUFFER_H + r][c];
         }
     }
 

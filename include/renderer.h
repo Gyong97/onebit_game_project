@@ -9,9 +9,11 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-/* ── Map dimensions (viewport is always 10 cols × 10 rows) ───────────── */
-#define MAP_WIDTH  10
-#define MAP_HEIGHT 10   /* visible viewport height; logical map is infinite */
+/* ── Map dimensions ──────────────────────────────────────────────────── */
+#define MAP_WIDTH    11   /* columns (border walls at x=0 and x=MAP_WIDTH-1) */
+#define MAP_HEIGHT   20   /* visible viewport rows */
+#define MAP_BUFFER_H 10   /* invisible pre-load buffer rows above visible area */
+#define MAP_TOTAL_H  (MAP_HEIGHT + MAP_BUFFER_H) /* total rows in map_t */
 
 /* ── Message buffer size ──────────────────────────────────────────────── */
 #define MSG_BUF_SIZE   128
@@ -27,7 +29,9 @@ typedef enum {
     TILE_MONSTER = 3, /* 'M' monster entity */
     TILE_CHEST   = 4, /* 'C' chest object */
     TILE_COIN    = 5, /* '$' collectible coin */
-    TILE_SHOP    = 6  /* 'S' shop tile — buy items with coins */
+    TILE_SHOP       = 6, /* 'S' shop tile — buy items with coins */
+    TILE_CHEST_OPEN = 7, /* 'c' opened chest — impassable, no interaction */
+    TILE_SHOP_OPEN  = 8  /* 's' visited shop — impassable, no interaction */
 } tile_type_t;
 
 /**

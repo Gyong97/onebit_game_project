@@ -18,8 +18,12 @@
 
 #include "renderer.h"  /* tile_type_t, MAP_WIDTH, MAP_HEIGHT */
 
-/* VIEWPORT_H is the same as MAP_HEIGHT — alias for semantic clarity */
-#define VIEWPORT_H MAP_HEIGHT
+/*
+ * VIEWPORT_H spans the full map (visible rows + invisible pre-load buffer).
+ * Use MAP_HEIGHT for rendering (visible rows only) and MAP_BUFFER_H for
+ * the invisible buffer zone at the top of the map (rows 0..MAP_BUFFER_H-1).
+ */
+#define VIEWPORT_H MAP_TOTAL_H
 
 /* Procedural generation: % chance per interior cell for an internal wall */
 #define OBSTACLE_SPAWN_PCT 15

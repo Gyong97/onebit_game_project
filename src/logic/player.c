@@ -224,7 +224,7 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
              * one, so player.y is incremented to compensate, keeping the
              * player at the buffer boundary in viewport coordinates.
              */
-            if (action == ACTION_MOVE_UP && p_player->y < SCROLL_BUFFER) {
+            if (action == ACTION_MOVE_UP && p_player->y < MAP_BUFFER_H + SCROLL_BUFFER) {
                 map_set_tile(p_map, p_player->x, p_player->y, TILE_FLOOR);
                 if (map_scroll(p_map) != 0) {
                     return -1;
@@ -254,6 +254,11 @@ int player_move(player_t *p_player, action_t action, map_t *p_map)
              * Shop interaction: player stays, turn_manager handles purchase.
              */
             return PLAYER_MOVE_SHOP;
+
+        case TILE_CHEST_OPEN:
+        case TILE_SHOP_OPEN:
+            /* Already opened/visited — still a fixed object, so block movement. */
+            return 1;
 
         default:
             return 1; /* blocked */

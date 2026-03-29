@@ -357,6 +357,51 @@ static int test_turn_scroll_shifts_surviving_monsters(void)
     return 0;
 }
 
+/* ── Phase 4: open tile tests ─────────────────────────────────────────── */
+
+/* After open_chest, tile must be TILE_CHEST_OPEN (not TILE_FLOOR) */
+static int test_turn_open_chest_leaves_chest_open(void)
+{
+    game_state_t state;
+    tile_type_t  tile;
+    int          cx;
+    int          cy;
+
+    TEST_ASSERT(turn_manager_init(&state) == 0,
+                "turn_manager_init should return 0");
+    cx = PLAYER_INIT_X;
+    cy = PLAYER_INIT_Y - 1;
+    map_set_tile(&state.map, cx, cy, TILE_CHEST);
+
+    turn_manager_open_chest(&state, cx, cy);
+
+    TEST_ASSERT(map_get_tile(&state.map, cx, cy, &tile) == 0,
+                "map_get_tile after open_chest should succeed");
+    TEST_ASSERT(tile == TILE_CHEST_OPEN,
+                "open_chest must replace TILE_CHEST with TILE_CHEST_OPEN");
+    return 0;
+}
+
+/* After enter_shop (successful purchase), tile must be TILE_SHOP_OPEN */
+static int test_turn_enter_shop_leaves_shop_open(void)
+{
+    game_state_t state;
+    tile_type_t  tile;
+
+    TEST_ASSERT(turn_manager_init(&state) == 0,
+                "turn_manager_init should return 0");
+    state.player.coins = SHOP_ITEM_COST;
+    map_set_tile(&state.map, 3, 0, TILE_SHOP);
+
+    turn_manager_enter_shop(&state, 3, 0);
+
+    TEST_ASSERT(map_get_tile(&state.map, 3, 0, &tile) == 0,
+                "map_get_tile after enter_shop should succeed");
+    TEST_ASSERT(tile == TILE_SHOP_OPEN,
+                "enter_shop must replace TILE_SHOP with TILE_SHOP_OPEN");
+    return 0;
+}
+
 /* ── NULL argument safety ─────────────────────────────────────────────── */
 
 static int test_turn_player_act_null(void)
@@ -412,6 +457,8 @@ int main(void)
         { "test_turn_player_act_null",                 test_turn_player_act_null                 },
         { "test_turn_monsters_act_null",               test_turn_monsters_act_null               },
         { "test_turn_spawn_null",                      test_turn_spawn_null                      },
+        { "test_turn_open_chest_leaves_chest_open",    test_turn_open_chest_leaves_chest_open    },
+        { "test_turn_enter_shop_leaves_shop_open",     test_turn_enter_shop_leaves_shop_open     },
     };
 
     printf("=== Turn Manager Tests ===\n");

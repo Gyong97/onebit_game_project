@@ -191,8 +191,8 @@ static int test_open_chest_removes_tile(void)
     turn_manager_open_chest(&state, cx, cy);
 
     map_get_tile(&state.map, cx, cy, &tile);
-    TEST_ASSERT(tile == TILE_FLOOR,
-                "turn_manager_open_chest must replace TILE_CHEST with TILE_FLOOR");
+    TEST_ASSERT(tile == TILE_CHEST_OPEN,
+                "turn_manager_open_chest must replace TILE_CHEST with TILE_CHEST_OPEN");
     return 0;
 }
 
@@ -228,8 +228,8 @@ static int test_player_act_chest_opens_tile(void)
     turn_manager_player_act(&state, ACTION_MOVE_UP);
 
     map_get_tile(&state.map, cx, cy, &tile);
-    TEST_ASSERT(tile == TILE_FLOOR,
-                "player_act into TILE_CHEST must open chest (tile becomes TILE_FLOOR)");
+    TEST_ASSERT(tile == TILE_CHEST_OPEN,
+                "player_act into TILE_CHEST must open chest (tile becomes TILE_CHEST_OPEN)");
     return 0;
 }
 

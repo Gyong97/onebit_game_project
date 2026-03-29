@@ -42,10 +42,19 @@ static void map_generate_base_row(tile_type_t row[MAP_WIDTH])
 static void map_generate_procedural_row(tile_type_t row[MAP_WIDTH])
 {
     int x;
+    int has_floor = 0;
+
     row[0]             = TILE_WALL;
     row[MAP_WIDTH - 1] = TILE_WALL;
     for (x = 1; x < MAP_WIDTH - 1; x++) {
         row[x] = (rand() % 100 < OBSTACLE_SPAWN_PCT) ? TILE_WALL : TILE_FLOOR;
+        if (row[x] == TILE_FLOOR) {
+            has_floor = 1;
+        }
+    }
+    /* Guarantee at least one passable interior cell (no isolated row). */
+    if (!has_floor) {
+        row[MAP_WIDTH / 2] = TILE_FLOOR;
     }
 }
 

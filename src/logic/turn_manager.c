@@ -364,8 +364,8 @@ int turn_manager_enter_shop(game_state_t *p_state, int x, int y)
     item_db_get(id, &item);
     player_add_item(&p_state->player, &item);
 
-    /* Remove shop tile */
-    map_set_tile(&p_state->map, x, y, TILE_FLOOR);
+    /* Mark shop as visited (stays on map, no re-interaction) */
+    map_set_tile(&p_state->map, x, y, TILE_SHOP_OPEN);
     return 0;
 }
 
@@ -383,8 +383,8 @@ int turn_manager_open_chest(game_state_t *p_state, int x, int y)
     item_db_get(id, &item);
     player_add_item(&p_state->player, &item);
 
-    /* Remove chest tile */
-    map_set_tile(&p_state->map, x, y, TILE_FLOOR);
+    /* Mark chest as opened (stays on map in open state, no re-interaction) */
+    map_set_tile(&p_state->map, x, y, TILE_CHEST_OPEN);
     return 0;
 }
 
