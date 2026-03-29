@@ -17,7 +17,7 @@
 #include <stddef.h>   /* NULL   */
 #include <stdlib.h>   /* rand(), srand() */
 #include <time.h>     /* time() */
-#include <string.h>   /* memset */
+#include <string.h>   /* memset, strncpy */
 #include <math.h>     /* pow()  — depth-scaled monster stats */
 #include "turn_manager.h"
 #include "item_db.h"    /* item_db_get(), ITEM_DB_COUNT */
@@ -65,6 +65,15 @@ int turn_manager_init(game_state_t *p_state)
         /* alive == 0 from memset */
     }
 
+    /* Initialise UI notification state */
+    for (i = 0; i < CHEST_LOOT_MAX; i++) {
+        p_state->chest_loot_names[i][0] = '\0';
+    }
+    p_state->chest_loot_count           = 0;
+    p_state->chest_loot_ttl             = 0;
+    p_state->levelup_ttl                = 0;
+    p_state->last_attacked_monster_idx  = -1;
+
     srand((unsigned int)time(NULL));
     return 0;
 }
@@ -102,6 +111,7 @@ static void apply_player_attack(game_state_t *p_state, int tx, int ty)
             continue;
         }
         if (p_state->monsters[i].x == tx && p_state->monsters[i].y == ty) {
+            p_state->last_attacked_monster_idx = i;
             p_state->monsters[i].hp -= p_state->player.atk;
             if (p_state->monsters[i].hp <= 0) {
                 p_state->monsters[i].alive = 0;
@@ -110,7 +120,10 @@ static void apply_player_attack(game_state_t *p_state, int tx, int ty)
                 {
                     int xp = XP_BASE_REWARD
                              + (int)(p_state->map.scroll_count / 10);
-                    player_gain_xp(&p_state->player, xp);
+                    int leveled_up = player_gain_xp(&p_state->player, xp);
+                    if (leveled_up > 0) {
+                        p_state->levelup_ttl = LEVELUP_DISPLAY_TTL;
+                    }
                 }
             }
             break;
@@ -156,6 +169,21 @@ int turn_manager_player_act(game_state_t *p_state, action_t action)
             return -1;
         }
         return TURN_SHOP_OPEN;  /* monster turn is skipped; main loop runs shop UI */
+    }
+
+    /* Decrement UI notification TTLs on every successful player action */
+    if (p_state->chest_loot_ttl > 0) {
+        p_state->chest_loot_ttl--;
+        if (p_state->chest_loot_ttl == 0) {
+            int k;
+            p_state->chest_loot_count = 0;
+            for (k = 0; k < CHEST_LOOT_MAX; k++) {
+                p_state->chest_loot_names[k][0] = '\0';
+            }
+        }
+    }
+    if (p_state->levelup_ttl > 0) {
+        p_state->levelup_ttl--;
     }
 
     /* Player moved or acted: handle scroll then run monster turn */
@@ -275,6 +303,8 @@ int turn_manager_spawn_monster_typed(game_state_t *p_state, int x, int y,
         p_state->monsters[slot].hp  = (int)(p_state->monsters[slot].hp  * scale);
         p_state->monsters[slot].atk = (int)(p_state->monsters[slot].atk * scale);
     }
+    /* max_hp reflects the fully-scaled spawn HP */
+    p_state->monsters[slot].max_hp = p_state->monsters[slot].hp;
 
     map_set_tile(&p_state->map, x, y, TILE_MONSTER);
     return 0;
@@ -366,15 +396,30 @@ int turn_manager_open_chest(game_state_t *p_state, int x, int y)
 {
     item_t item;
     int    id;
+    int    i;
 
     if (p_state == NULL) {
         return -1;
     }
 
+    /* Reset chest loot notification */
+    for (i = 0; i < CHEST_LOOT_MAX; i++) {
+        p_state->chest_loot_names[i][0] = '\0';
+    }
+    p_state->chest_loot_count = 0;
+
     /* Pick a random item from the database and give it to the player */
     id = rand() % ITEM_DB_COUNT;
     item_db_get(id, &item);
-    player_add_item(&p_state->player, &item);
+    if (player_add_item(&p_state->player, &item) == 0) {
+        /* Record the item name for the UI notification */
+        strncpy(p_state->chest_loot_names[p_state->chest_loot_count],
+                item.name, CHEST_LOOT_NAME_MAX - 1);
+        p_state->chest_loot_names[p_state->chest_loot_count]
+                                  [CHEST_LOOT_NAME_MAX - 1] = '\0';
+        p_state->chest_loot_count++;
+    }
+    p_state->chest_loot_ttl = CHEST_LOOT_TTL;
 
     /* Mark chest as opened (stays on map in open state, no re-interaction) */
     map_set_tile(&p_state->map, x, y, TILE_CHEST_OPEN);

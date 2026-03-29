@@ -16,13 +16,13 @@
 - [x] 이후 몬스터, 아이템, 플레이어 직업군 추가가 용이하도록 코드 확장성 개선
 
 ## 3단계: 상점 기능 구현
-- [ ] 상점 입장/퇴장 기능 구현
-- [ ] 상점 구매 기능 구현
-- [ ] 상점 판매 기능 구현
+- [x] 상점 입장/퇴장 기능 구현
+- [x] 상점 구매 기능 구현
+- [x] 상점 판매 기능 구현
 
 ## 4단계: 시스템 UI 구현
-- [ ] UI 구현 인터페이스 함수 구현 ( 이후 CLI -> GUI 확장성 고려 )
-- [ ] game_spec.md의 UI 부분 몬스터 UI 구현
-- [ ] game_spec.md의 UI 부분 상자 UI 구현
-- [ ] game_spec.md의 UI 부분 상점 UI 구현
-- [ ] game_spec.md의 UI 부분 플레이어 UI 구현
+- [x] UI 구현 인터페이스 함수 구현 ( 이후 CLI -> GUI 확장성 고려 )
+- [x] game_spec.md의 UI 부분 몬스터 UI 구현
+- [x] game_spec.md의 UI 부분 상자 UI 구현
+- [x] game_spec.md의 UI 부분 상점 UI 구현
+- [x] game_spec.md의 UI 부분 플레이어 UI 구현

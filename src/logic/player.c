@@ -171,11 +171,14 @@ int player_init(player_t *p_player)
 
 int player_gain_xp(player_t *p_player, int amount)
 {
+    int levels_gained;
+
     if (p_player == NULL) {
         return -1;
     }
 
     p_player->xp += amount;
+    levels_gained = 0;
 
     /* Process level-ups: threshold for current level = level * LEVELUP_XP_FACTOR */
     while (p_player->xp >= p_player->level * LEVELUP_XP_FACTOR) {
@@ -185,9 +188,10 @@ int player_gain_xp(player_t *p_player, int amount)
         p_player->hp      = p_player->max_hp; /* full heal */
         p_player->atk    += LEVELUP_ATK_BONUS;
         p_player->def    += LEVELUP_DEF_BONUS;
+        levels_gained++;
     }
 
-    return 0;
+    return levels_gained; /* 0 = no level-up; >0 = number of levels gained */
 }
 
 int player_move(player_t *p_player, action_t action, map_t *p_map)

@@ -55,12 +55,13 @@ typedef enum {
  * alive == 0 means this pool slot is free and must be ignored by callers.
  */
 typedef struct {
-    int           x;     /* column in viewport [0, MAP_WIDTH)  */
-    int           y;     /* row    in viewport [0, VIEWPORT_H) */
-    int           hp;    /* current hit points                 */
-    int           atk;   /* attack power                       */
-    int           alive; /* non-zero while the monster is active */
-    monster_type_t type; /* species of this monster            */
+    int           x;      /* column in viewport [0, MAP_WIDTH)  */
+    int           y;      /* row    in viewport [0, VIEWPORT_H) */
+    int           hp;     /* current hit points                 */
+    int           max_hp; /* maximum HP — set at spawn (after scaling) */
+    int           atk;    /* attack power                       */
+    int           alive;  /* non-zero while the monster is active */
+    monster_type_t type;  /* species of this monster            */
 } monster_t;
 
 /* ── Monster API ──────────────────────────────────────────────────────── */

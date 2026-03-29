@@ -38,12 +38,13 @@ int monster_init_typed(monster_t *p_monster, int x, int y,
         type = MONSTER_TYPE_GOBLIN;
     }
 
-    p_monster->x     = x;
-    p_monster->y     = y;
-    p_monster->hp    = def.base_hp;
-    p_monster->atk   = def.base_atk;
-    p_monster->alive = 1;
-    p_monster->type  = type;
+    p_monster->x      = x;
+    p_monster->y      = y;
+    p_monster->hp     = def.base_hp;
+    p_monster->max_hp = def.base_hp;  /* updated after scaling in turn_manager */
+    p_monster->atk    = def.base_atk;
+    p_monster->alive  = 1;
+    p_monster->type   = type;
     return 0;
 }
 

@@ -19,6 +19,41 @@
 #define MSG_BUF_SIZE   128
 #define EQUIP_NAME_MAX  16  /* max chars for an equipped item name */
 
+/* ── UI panel constants ───────────────────────────────────────────────── */
+#define UI_NAME_MAX          16  /* max chars for a name in any UI panel      */
+#define UI_MONSTER_PANEL_MAX  4  /* max monster entries in the info panel     */
+#define UI_CHEST_PANEL_MAX    3  /* max chest loot lines shown                */
+#define UI_SHOP_BUY_MAX      16  /* max buy-page entries (future item growth) */
+#define UI_SELL_MAX          10  /* max sell-page entries (= INVENTORY_MAX)   */
+
+/* ── UI panel entry types ─────────────────────────────────────────────── */
+
+/**
+ * @brief One monster displayed in the monster info panel.
+ *
+ * Monsters adjacent to the player carry a dir string ("N","S","W","E").
+ * Non-adjacent tracked monsters (last attacked) have dir = "".
+ */
+typedef struct {
+    char name[UI_NAME_MAX];  /* monster type name                    */
+    int  hp;                 /* current HP                           */
+    int  max_hp;             /* maximum HP (set at spawn)            */
+    char dir[4];             /* "N","S","W","E" or "" (not adjacent) */
+    int  active;             /* 1 = this slot holds a valid entry    */
+} ui_monster_entry_t;
+
+/** @brief One item entry on the shop buy page. */
+typedef struct {
+    char name[UI_NAME_MAX];
+    int  price;
+} ui_buy_entry_t;
+
+/** @brief One item entry on the shop sell page. */
+typedef struct {
+    char name[UI_NAME_MAX];
+    int  sell_price;
+} ui_sell_entry_t;
+
 /**
  * @brief All possible tile types that can occupy a map cell.
  */
@@ -41,20 +76,47 @@ typedef enum {
  * The renderer must treat this data as read-only.
  */
 typedef struct {
-    tile_type_t tiles[MAP_HEIGHT][MAP_WIDTH]; /* viewport tile grid (rows[0] = top) */
-    int         player_hp;                    /* current HP */
-    int         player_max_hp;               /* maximum HP */
-    int         player_atk;                  /* attack power */
-    int         player_def;                  /* defense power */
-    int         player_coins;               /* coins collected */
-    int         inventory_count;            /* items in bag */
-    /* Equipped item names; empty string "" means slot is empty */
-    char        equip_weapon[EQUIP_NAME_MAX];
-    char        equip_head[EQUIP_NAME_MAX];
-    char        equip_body[EQUIP_NAME_MAX];
-    long        scroll_count;                 /* rows scrolled = depth traveled */
-    long        best_depth;                   /* best depth from save data       */
-    char        message[MSG_BUF_SIZE];        /* event log line (may be empty) */
+    /* ── Map grid ──────────────────────────────────────────────────── */
+    tile_type_t tiles[MAP_HEIGHT][MAP_WIDTH]; /* viewport (rows[0] = top) */
+
+    /* ── Player HUD ────────────────────────────────────────────────── */
+    int  player_hp;
+    int  player_max_hp;
+    int  player_atk;
+    int  player_def;
+    int  player_coins;
+    int  inventory_count;
+    char equip_weapon[EQUIP_NAME_MAX];
+    char equip_head[EQUIP_NAME_MAX];
+    char equip_body[EQUIP_NAME_MAX];
+    long scroll_count;
+    long best_depth;
+
+    /* Player level / XP */
+    int  player_level;       /* current level */
+    int  player_xp;          /* current XP    */
+    int  player_xp_to_next;  /* XP needed for next level */
+    int  show_levelup;       /* 1 = display LEVEL UP! notification */
+
+    /* ── Monster info panel ─────────────────────────────────────────── */
+    ui_monster_entry_t monster_panel[UI_MONSTER_PANEL_MAX];
+
+    /* ── Chest loot panel ───────────────────────────────────────────── */
+    char chest_loot[UI_CHEST_PANEL_MAX][UI_NAME_MAX];
+    int  chest_loot_count;   /* 0 = hide panel */
+
+    /* ── Shop panel ─────────────────────────────────────────────────── */
+    int             in_shop;          /* 1 = shop UI is open           */
+    int             shop_page;        /* SHOP_PAGE_BUY or SELL         */
+    int             shop_buy_cursor;
+    int             shop_sell_cursor;
+    ui_buy_entry_t  shop_buy_list[UI_SHOP_BUY_MAX];
+    int             shop_buy_count;
+    ui_sell_entry_t shop_sell_list[UI_SELL_MAX];
+    int             shop_sell_count;
+
+    /* ── Event message ──────────────────────────────────────────────── */
+    char message[MSG_BUF_SIZE];
 } render_frame_t;
 
 /* ── Renderer API ─────────────────────────────────────────────────────── */

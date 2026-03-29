@@ -25,6 +25,12 @@
 #define TURN_GAME_OVER   2   /* player HP reached 0 — game ends           */
 #define TURN_SHOP_OPEN   3   /* shop was entered — monster turn is skipped */
 
+/* ── UI notification constants ────────────────────────────────────────── */
+#define CHEST_LOOT_MAX        3  /* max items recorded per chest open          */
+#define CHEST_LOOT_NAME_MAX  16  /* max chars for a chest-loot item name       */
+#define CHEST_LOOT_TTL        3  /* player actions until chest panel disappears */
+#define LEVELUP_DISPLAY_TTL   3  /* player actions until LEVEL UP! disappears  */
+
 /* ── Spawn constants ─────────────────────────────────────────────────── */
 #define CHEST_SPAWN_PCT  15  /* % chance per interior column on new row   */
 #define CHEST_HP_REWARD  20  /* HP healed when opening a chest            */
@@ -49,6 +55,19 @@ typedef struct {
     player_t     player;                       /* player entity      */
     monster_t    monsters[MONSTER_MAX_COUNT];  /* monster pool       */
     shop_state_t shop;                         /* in-shop UI state   */
+
+    /* ── UI notification state ──────────────────────────────────────── */
+
+    /** Chest loot panel: item names and remaining display turns. */
+    char chest_loot_names[CHEST_LOOT_MAX][CHEST_LOOT_NAME_MAX];
+    int  chest_loot_count; /* entries populated in chest_loot_names */
+    int  chest_loot_ttl;   /* player actions until panel disappears; 0=hidden */
+
+    /** Level-up notification: remaining display turns. */
+    int  levelup_ttl;      /* >0 while LEVEL UP! should be shown */
+
+    /** Last monster attacked by the player (pool index; -1 = none). */
+    int  last_attacked_monster_idx;
 } game_state_t;
 
 /* ── Turn manager API ─────────────────────────────────────────────────── */

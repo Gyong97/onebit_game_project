@@ -12,58 +12,10 @@
 #include "renderer.h"
 #include "input.h"
 #include "turn_manager.h"
-#include "player.h"       /* EQUIP_SLOT_* */
-#include "save_manager.h" /* save_data_t, save_manager_* */
-#include "shop.h"         /* shop_buy, shop_sell, shop_close, SHOP_PAGE_* */
-#include "item_db.h"      /* ITEM_DB_COUNT, item_db_get */
-
-/* ── Helpers ──────────────────────────────────────────────────────────── */
-
-/**
- * @brief Copy game_state_t into a render_frame_t snapshot for the renderer.
- */
-static void build_frame(const game_state_t *p_state,
-                        const save_data_t  *p_save,
-                        render_frame_t     *p_frame)
-{
-    int             r;
-    int             c;
-    const player_t *pl = &p_state->player;
-    int             slot;
-    const char     *name;
-
-    /* Copy only the visible rows (skip MAP_BUFFER_H invisible pre-load rows). */
-    for (r = 0; r < MAP_HEIGHT; r++) {
-        for (c = 0; c < MAP_WIDTH; c++) {
-            p_frame->tiles[r][c] = p_state->map.rows[MAP_BUFFER_H + r][c];
-        }
-    }
-
-    p_frame->player_hp       = pl->hp;
-    p_frame->player_max_hp   = pl->max_hp;
-    p_frame->player_atk      = pl->atk;
-    p_frame->player_def      = pl->def;
-    p_frame->player_coins    = pl->coins;
-    p_frame->inventory_count = pl->inventory_count;
-    p_frame->scroll_count    = p_state->map.scroll_count;
-    p_frame->best_depth      = p_save->best_depth;
-    p_frame->message[0]      = '\0';
-
-    slot = pl->equipment[EQUIP_SLOT_WEAPON];
-    name = (slot != -1) ? pl->inventory[slot].name : "";
-    strncpy(p_frame->equip_weapon, name, EQUIP_NAME_MAX - 1);
-    p_frame->equip_weapon[EQUIP_NAME_MAX - 1] = '\0';
-
-    slot = pl->equipment[EQUIP_SLOT_HEAD];
-    name = (slot != -1) ? pl->inventory[slot].name : "";
-    strncpy(p_frame->equip_head, name, EQUIP_NAME_MAX - 1);
-    p_frame->equip_head[EQUIP_NAME_MAX - 1] = '\0';
-
-    slot = pl->equipment[EQUIP_SLOT_BODY];
-    name = (slot != -1) ? pl->inventory[slot].name : "";
-    strncpy(p_frame->equip_body, name, EQUIP_NAME_MAX - 1);
-    p_frame->equip_body[EQUIP_NAME_MAX - 1] = '\0';
-}
+#include "player.h"        /* EQUIP_SLOT_* */
+#include "save_manager.h"  /* save_data_t, save_manager_* */
+#include "shop.h"          /* shop_buy, shop_sell, shop_close, SHOP_PAGE_* */
+#include "frame_builder.h" /* frame_builder_build */
 
 /**
  * @brief Peek at the tile the player is about to step into.
@@ -116,7 +68,7 @@ int main(void)
     /* ── Game loop ──────────────────────────────────────────────────── */
     for (;;) {
         renderer_clear();
-        build_frame(&state, &save, &frame);
+        frame_builder_build(&frame, &state, &save);
         renderer_draw(&frame);
 
         if (input_get_action(&action) != 0) {
@@ -138,40 +90,12 @@ int main(void)
         if (turn_result == TURN_SHOP_OPEN) {
             snprintf(frame.message, MSG_BUF_SIZE,
                      "SHOP  [W/S]=select  [A/D]=buy<>sell  [SPC]=confirm  [Q]=exit");
-            /* Inner shop loop: runs until player presses Q to exit */
+            /* Inner shop loop: runs until player presses Q to exit.
+             * frame_builder_build populates shop panel; renderer_draw shows it. */
             while (state.shop.active) {
                 renderer_clear();
-                build_frame(&state, &save, &frame);
-                /* Print shop UI below the HUD */
-                if (state.shop.page == SHOP_PAGE_BUY) {
-                    int    i;
-                    item_t it;
-                    printf("=== SHOP: BUY ===\n");
-                    for (i = 0; i < ITEM_DB_COUNT; i++) {
-                        item_db_get(i, &it);
-                        printf("%s %-12s  %2d coins\n",
-                               (i == state.shop.buy_cursor) ? ">" : " ",
-                               it.name, it.buy_price);
-                    }
-                    printf("Coins: %d\n", state.player.coins);
-                } else {
-                    int i;
-                    printf("=== SHOP: SELL ===\n");
-                    if (state.player.inventory_count == 0) {
-                        printf("  (no items)\n");
-                    } else {
-                        for (i = 0; i < state.player.inventory_count; i++) {
-                            int sp = state.player.inventory[i].buy_price
-                                     / SHOP_SELL_RATIO;
-                            if (sp < 1) sp = 1;
-                            printf("%s %-12s  sell %d coins\n",
-                                   (i == state.shop.sell_cursor) ? ">" : " ",
-                                   state.player.inventory[i].name, sp);
-                        }
-                    }
-                    printf("Coins: %d\n", state.player.coins);
-                }
-                fflush(stdout);
+                frame_builder_build(&frame, &state, &save);
+                renderer_draw(&frame);
 
                 if (input_get_action(&action) != 0) {
                     shop_close(&state.shop);
@@ -234,7 +158,7 @@ int main(void)
             save_manager_update_on_death(&save, &state);
 
             renderer_clear();
-            build_frame(&state, &save, &frame);
+            frame_builder_build(&frame, &state, &save);
             snprintf(frame.message, MSG_BUF_SIZE,
                      "YOU DIED at depth %ld!  BEST: %ld",
                      state.map.scroll_count, save.best_depth);

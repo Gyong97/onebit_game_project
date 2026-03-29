@@ -36,12 +36,13 @@ int renderer_draw(const render_frame_t *p_frame)
 {
     int row;
     int col;
+    int i;
 
     if (p_frame == NULL) {
         return -1;
     }
 
-    /* Draw the map grid row by row */
+    /* ── Map grid ─────────────────────────────────────────────────── */
     for (row = 0; row < MAP_HEIGHT; row++) {
         for (col = 0; col < MAP_WIDTH; col++) {
             tile_type_t tile = p_frame->tiles[row][col];
@@ -50,7 +51,7 @@ int renderer_draw(const render_frame_t *p_frame)
         putchar('\n');
     }
 
-    /* Draw the HUD: player stats + depth + best record */
+    /* ── Player HUD ───────────────────────────────────────────────── */
     printf("HP: %d/%d  ATK: %d  DEF: %d  COINS: %d  DEPTH: %ld  BEST: %ld\n",
            p_frame->player_hp,
            p_frame->player_max_hp,
@@ -60,15 +61,73 @@ int renderer_draw(const render_frame_t *p_frame)
            p_frame->scroll_count,
            p_frame->best_depth);
 
-    /* Draw equipment slots */
-    printf("[W]%-6s  [H]%-6s  [B]%-6s  BAG:%d/%d\n",
+    /* Level / XP bar */
+    printf("LV: %d  XP: %d/%d",
+           p_frame->player_level,
+           p_frame->player_xp,
+           p_frame->player_xp_to_next);
+    if (p_frame->show_levelup) {
+        printf("  *** LEVEL UP! ***");
+    }
+    putchar('\n');
+
+    /* Equipment slots */
+    printf("[W]%-6s  [H]%-6s  [B]%-6s  BAG:%d\n",
            p_frame->equip_weapon[0] != '\0' ? p_frame->equip_weapon : "--",
            p_frame->equip_head[0]   != '\0' ? p_frame->equip_head   : "--",
            p_frame->equip_body[0]   != '\0' ? p_frame->equip_body   : "--",
-           p_frame->inventory_count,
-           10); /* INVENTORY_MAX */
+           p_frame->inventory_count);
 
-    /* Draw the event message if one is present */
+    /* ── Monster info panel ───────────────────────────────────────── */
+    for (i = 0; i < UI_MONSTER_PANEL_MAX; i++) {
+        const ui_monster_entry_t *e = &p_frame->monster_panel[i];
+        if (!e->active) continue;
+        if (e->dir[0] != '\0') {
+            printf("[%s] %-8s  HP: %d/%d\n",
+                   e->dir, e->name, e->hp, e->max_hp);
+        } else {
+            printf("[~] %-8s  HP: %d/%d\n",
+                   e->name, e->hp, e->max_hp);
+        }
+    }
+
+    /* ── Chest loot panel ─────────────────────────────────────────── */
+    if (p_frame->chest_loot_count > 0) {
+        printf("Chest: ");
+        for (i = 0; i < p_frame->chest_loot_count; i++) {
+            if (i > 0) printf(", ");
+            printf("%s", p_frame->chest_loot[i]);
+        }
+        putchar('\n');
+    }
+
+    /* ── Shop panel ───────────────────────────────────────────────── */
+    if (p_frame->in_shop) {
+        if (p_frame->shop_page == 0) { /* SHOP_PAGE_BUY */
+            printf("=== SHOP: BUY ===  [W/S]=select  [A/D]=page  [SPC]=buy  [Q]=exit\n");
+            for (i = 0; i < p_frame->shop_buy_count; i++) {
+                printf("%s %-12s  %2d coins\n",
+                       (i == p_frame->shop_buy_cursor) ? ">" : " ",
+                       p_frame->shop_buy_list[i].name,
+                       p_frame->shop_buy_list[i].price);
+            }
+        } else {
+            printf("=== SHOP: SELL ===  [W/S]=select  [A/D]=page  [SPC]=sell  [Q]=exit\n");
+            if (p_frame->shop_sell_count == 0) {
+                printf("  (no items)\n");
+            } else {
+                for (i = 0; i < p_frame->shop_sell_count; i++) {
+                    printf("%s %-12s  sell %d coins\n",
+                           (i == p_frame->shop_sell_cursor) ? ">" : " ",
+                           p_frame->shop_sell_list[i].name,
+                           p_frame->shop_sell_list[i].sell_price);
+                }
+            }
+        }
+        printf("Coins: %d\n", p_frame->player_coins);
+    }
+
+    /* ── Event message ────────────────────────────────────────────── */
     if (p_frame->message[0] != '\0') {
         printf("> %s\n", p_frame->message);
     }

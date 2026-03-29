@@ -53,7 +53,7 @@ static void test_levelup_exact(void)
     /* Damage player so full-heal reward is observable */
     p.hp = 50;
 
-    assert(player_gain_xp(&p, 50) == 0); /* level 1 → 2 needs 50 XP */
+    assert(player_gain_xp(&p, 50) == 1); /* level 1 → 2: returns 1 level gained */
     assert(p.level  == 2);
     assert(p.xp     == 0);
     assert(p.max_hp == old_max_hp + LEVELUP_MAXHP_BONUS);
@@ -68,7 +68,7 @@ static void test_levelup_leftover_xp(void)
 {
     player_t p;
     player_init(&p);
-    assert(player_gain_xp(&p, 75) == 0); /* 50 used, 25 leftover */
+    assert(player_gain_xp(&p, 75) == 1); /* 1 level gained, 25 leftover */
     assert(p.level == 2);
     assert(p.xp    == 25);
     printf("[PASS] levelup: leftover xp=%d carried over\n", p.xp);
@@ -80,7 +80,7 @@ static void test_double_levelup(void)
     player_t p;
     player_init(&p);
     /* Level 1→2: 50 XP, level 2→3: 100 XP, total needed: 150 */
-    assert(player_gain_xp(&p, 150) == 0);
+    assert(player_gain_xp(&p, 150) == 2); /* 2 levels gained at once */
     assert(p.level == 3);
     printf("[PASS] double levelup: level 1->3 with 150 xp\n");
 }
