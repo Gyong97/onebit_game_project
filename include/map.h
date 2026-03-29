@@ -84,4 +84,20 @@ int map_get_tile(const map_t *p_map, int x, int y, tile_type_t *p_tile);
  */
 int map_set_tile(map_t *p_map, int x, int y, tile_type_t tile);
 
+/**
+ * @brief Ensure all passable tiles in the invisible buffer are connected.
+ *
+ * Performs a BFS flood-fill from every passable tile in rows[MAP_BUFFER_H-1]
+ * (the buffer-visible boundary).  Any passable tile that cannot be reached
+ * gets a wall-breaking corridor carved toward the nearest reachable tile via
+ * a second BFS that crosses walls.  Repeats until the entire buffer forms a
+ * single connected component.
+ *
+ * Only rows[0..MAP_BUFFER_H-1] are modified; the visible area is untouched.
+ * Called automatically by map_scroll() before the new row becomes visible.
+ *
+ * @param p_map  Map to fix; must not be NULL (silently returns on NULL).
+ */
+void map_ensure_connectivity(map_t *p_map);
+
 #endif /* MAP_H */

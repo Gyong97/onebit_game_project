@@ -12,6 +12,114 @@
 #include <stdlib.h>  /* rand()  */
 #include "map.h"
 
+/* ── Connectivity helpers ─────────────────────────────────────────────── */
+
+/* Total cells in the buffer region */
+#define BUF_CELLS (MAP_BUFFER_H * MAP_WIDTH)
+
+/* A tile that is not TILE_WALL counts as passable for connectivity. */
+static int tile_passable(tile_type_t t)
+{
+    return (t != TILE_WALL);
+}
+
+/*
+ * BFS flood-fill within rows[0..MAP_BUFFER_H-1], seeded from all passable
+ * tiles in rows[MAP_BUFFER_H-1] (the buffer-to-visible boundary).
+ * Sets visited[y][x]=1 for every reachable passable tile.
+ */
+static void buffer_bfs(const map_t *p_map,
+                       int visited[MAP_BUFFER_H][MAP_WIDTH])
+{
+    int queue[BUF_CELLS];
+    int head = 0, tail = 0;
+    int x, y, nx, ny, d;
+    static const int dx[4] = { 0,  0, 1, -1};
+    static const int dy[4] = {-1,  1, 0,  0};
+
+    memset(visited, 0, MAP_BUFFER_H * MAP_WIDTH * sizeof(int));
+
+    for (x = 1; x < MAP_WIDTH - 1; x++) {
+        if (tile_passable(p_map->rows[MAP_BUFFER_H - 1][x])) {
+            visited[MAP_BUFFER_H - 1][x] = 1;
+            queue[tail++] = (MAP_BUFFER_H - 1) * MAP_WIDTH + x;
+        }
+    }
+    while (head < tail) {
+        int pos = queue[head++];
+        y = pos / MAP_WIDTH;
+        x = pos % MAP_WIDTH;
+        for (d = 0; d < 4; d++) {
+            nx = x + dx[d]; ny = y + dy[d];
+            if (nx <= 0 || nx >= MAP_WIDTH - 1) continue;
+            if (ny < 0 || ny >= MAP_BUFFER_H)   continue;
+            if (visited[ny][nx]) continue;
+            if (!tile_passable(p_map->rows[ny][nx])) continue;
+            visited[ny][nx] = 1;
+            queue[tail++] = ny * MAP_WIDTH + nx;
+        }
+    }
+}
+
+/*
+ * From unvisited passable tile (start_x, start_y), BFS through ALL tiles
+ * (crossing walls) until a visited tile is found, then backtrack via parent
+ * pointers and convert wall tiles on the path to TILE_FLOOR.
+ * Newly passable tiles are marked visited[] so the caller's visited map stays
+ * consistent.
+ */
+static void carve_to_reachable(map_t *p_map,
+                                int visited[MAP_BUFFER_H][MAP_WIDTH],
+                                int start_x, int start_y)
+{
+    int queue[BUF_CELLS];
+    int parent[MAP_BUFFER_H][MAP_WIDTH]; /* packed pos, -1 = none */
+    int seen[MAP_BUFFER_H][MAP_WIDTH];
+    int head = 0, tail = 0;
+    int x, y, nx, ny, d;
+    static const int dx[4] = { 0,  0, 1, -1};
+    static const int dy[4] = {-1,  1, 0,  0};
+
+    memset(parent, -1, sizeof(parent));
+    memset(seen,    0, sizeof(seen));
+
+    seen[start_y][start_x] = 1;
+    queue[tail++] = start_y * MAP_WIDTH + start_x;
+
+    while (head < tail) {
+        int pos = queue[head++];
+        y = pos / MAP_WIDTH;
+        x = pos % MAP_WIDTH;
+
+        for (d = 0; d < 4; d++) {
+            nx = x + dx[d]; ny = y + dy[d];
+            if (nx <= 0 || nx >= MAP_WIDTH - 1) continue;
+            if (ny < 0 || ny >= MAP_BUFFER_H)   continue;
+            if (seen[ny][nx]) continue;
+            seen[ny][nx]     = 1;
+            parent[ny][nx]   = pos; /* remember where we came from */
+
+            if (visited[ny][nx]) {
+                /* Path found — backtrack and carve walls to floor */
+                int cx = nx, cy = ny;
+                while (parent[cy][cx] >= 0) {
+                    int pp = parent[cy][cx];
+                    int py = pp / MAP_WIDTH;
+                    int px = pp % MAP_WIDTH;
+                    if (p_map->rows[cy][cx] == TILE_WALL) {
+                        p_map->rows[cy][cx] = TILE_FLOOR;
+                    }
+                    visited[cy][cx] = 1;
+                    cx = px; cy = py;
+                }
+                visited[start_y][start_x] = 1;
+                return;
+            }
+            queue[tail++] = ny * MAP_WIDTH + nx;
+        }
+    }
+}
+
 /* ── Internal helpers ─────────────────────────────────────────────────── */
 
 /**
@@ -95,7 +203,40 @@ int map_scroll(map_t *p_map)
     }
     map_generate_procedural_row(p_map->rows[0]);
     p_map->scroll_count++;
+
+    /* Ensure buffer connectivity before the new row enters the visible area */
+    map_ensure_connectivity(p_map);
     return 0;
+}
+
+void map_ensure_connectivity(map_t *p_map)
+{
+    int visited[MAP_BUFFER_H][MAP_WIDTH];
+    int x, y;
+    int found;
+
+    if (p_map == NULL) return;
+
+    /*
+     * Repeat until every passable buffer tile is reachable:
+     *   1. BFS from rows[MAP_BUFFER_H-1] passable tiles.
+     *   2. Find first unreachable passable tile.
+     *   3. Carve a wall-breaking path to the nearest reachable tile.
+     * Each carve connects at least one new tile; the loop terminates because
+     * the total number of walls is finite.
+     */
+    do {
+        found = 0;
+        buffer_bfs(p_map, visited);
+        for (y = 0; y < MAP_BUFFER_H && !found; y++) {
+            for (x = 1; x < MAP_WIDTH - 1 && !found; x++) {
+                if (tile_passable(p_map->rows[y][x]) && !visited[y][x]) {
+                    carve_to_reachable(p_map, visited, x, y);
+                    found = 1;
+                }
+            }
+        }
+    } while (found);
 }
 
 int map_get_tile(const map_t *p_map, int x, int y, tile_type_t *p_tile)

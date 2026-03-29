@@ -318,6 +318,125 @@ static int test_map_scroll_row_always_passable(void)
     return 0;
 }
 
+/* ── Connectivity tests ───────────────────────────────────────────────── */
+
+/*
+ * Helper: BFS flood-fill from all passable tiles in rows[MAP_BUFFER_H-1].
+ * Returns 1 if every passable tile in rows[0..MAP_BUFFER_H-1] is reachable,
+ * 0 otherwise.
+ */
+static int buffer_all_connected(const map_t *map)
+{
+    int visited[MAP_BUFFER_H][MAP_WIDTH];
+    int queue[MAP_BUFFER_H * MAP_WIDTH];
+    int head = 0, tail = 0;
+    int x, y, nx, ny, d;
+    static const int dx[4] = { 0,  0, 1, -1};
+    static const int dy[4] = {-1,  1, 0,  0};
+
+    for (y = 0; y < MAP_BUFFER_H; y++)
+        for (x = 0; x < MAP_WIDTH; x++)
+            visited[y][x] = 0;
+
+    /* Seed from passable tiles in bottom buffer row */
+    for (x = 1; x < MAP_WIDTH - 1; x++) {
+        if (map->rows[MAP_BUFFER_H - 1][x] != TILE_WALL) {
+            visited[MAP_BUFFER_H - 1][x] = 1;
+            queue[tail++] = (MAP_BUFFER_H - 1) * MAP_WIDTH + x;
+        }
+    }
+    while (head < tail) {
+        int pos = queue[head++];
+        y = pos / MAP_WIDTH;
+        x = pos % MAP_WIDTH;
+        for (d = 0; d < 4; d++) {
+            nx = x + dx[d]; ny = y + dy[d];
+            if (nx <= 0 || nx >= MAP_WIDTH - 1) continue;
+            if (ny < 0 || ny >= MAP_BUFFER_H)   continue;
+            if (visited[ny][nx]) continue;
+            if (map->rows[ny][nx] == TILE_WALL)  continue;
+            visited[ny][nx] = 1;
+            queue[tail++] = ny * MAP_WIDTH + nx;
+        }
+    }
+    /* Check all passable buffer tiles are visited */
+    for (y = 0; y < MAP_BUFFER_H; y++)
+        for (x = 1; x < MAP_WIDTH - 1; x++)
+            if (map->rows[y][x] != TILE_WALL && !visited[y][x])
+                return 0;
+    return 1;
+}
+
+/*
+ * After MAP_BUFFER_H scrolls (fully procedural buffer), all passable tiles
+ * in the buffer must form a single connected component reachable from
+ * rows[MAP_BUFFER_H-1].
+ */
+static int test_map_connectivity_after_scroll(void)
+{
+    map_t map;
+    int   s;
+
+    srand(42);
+    TEST_ASSERT(map_init(&map) == 0, "map_init must succeed");
+    for (s = 0; s < MAP_BUFFER_H; s++) {
+        TEST_ASSERT(map_scroll(&map) == 0, "map_scroll must succeed");
+    }
+    TEST_ASSERT(buffer_all_connected(&map),
+                "all passable buffer tiles must be connected after scroll");
+    return 0;
+}
+
+/*
+ * Stress test: 500 scrolls with random seed — buffer always connected.
+ */
+static int test_map_connectivity_stress(void)
+{
+    map_t map;
+    int   s;
+
+    srand(99999);
+    TEST_ASSERT(map_init(&map) == 0, "map_init must succeed");
+    for (s = 0; s < 500; s++) {
+        TEST_ASSERT(map_scroll(&map) == 0, "map_scroll must succeed");
+        TEST_ASSERT(buffer_all_connected(&map),
+                    "buffer must be connected after every scroll");
+    }
+    return 0;
+}
+
+/*
+ * map_ensure_connectivity must connect a manually isolated floor tile.
+ */
+static int test_map_ensure_connectivity_fixes_isolation(void)
+{
+    map_t map;
+    int   x;
+
+    TEST_ASSERT(map_init(&map) == 0, "map_init must succeed");
+
+    /* Isolate (col=1, row=0):
+     *  - rows[0]: all interior walls except col 1 (floor)
+     *  - rows[1][1]: wall — blocks the only downward connection
+     * Now (1,0) is surrounded: left=border, right=wall, below=wall, above=OOB
+     */
+    for (x = 1; x < MAP_WIDTH - 1; x++)
+        map.rows[0][x] = TILE_WALL;
+    map.rows[0][1] = TILE_FLOOR; /* isolated floor tile */
+    map.rows[1][1] = TILE_WALL;  /* block path from below */
+
+    /* Before fix: not connected */
+    TEST_ASSERT(!buffer_all_connected(&map),
+                "isolated tile must make buffer disconnected before fix");
+
+    map_ensure_connectivity(&map);
+
+    /* After fix: connected */
+    TEST_ASSERT(buffer_all_connected(&map),
+                "buffer must be connected after map_ensure_connectivity");
+    return 0;
+}
+
 /* ── Test runner ──────────────────────────────────────────────────────── */
 
 typedef struct {
@@ -347,7 +466,10 @@ int main(void)
         { "test_map_set_tile_oob",                   test_map_set_tile_oob                   },
         { "test_map_dimensions",                     test_map_dimensions                     },
         { "test_map_total_height_accessible",        test_map_total_height_accessible        },
-        { "test_map_scroll_row_always_passable",     test_map_scroll_row_always_passable     },
+        { "test_map_scroll_row_always_passable",        test_map_scroll_row_always_passable        },
+        { "test_map_connectivity_after_scroll",         test_map_connectivity_after_scroll         },
+        { "test_map_connectivity_stress",               test_map_connectivity_stress               },
+        { "test_map_ensure_connectivity_fixes_isolation", test_map_ensure_connectivity_fixes_isolation },
     };
 
     printf("=== Map Tests ===\n");
