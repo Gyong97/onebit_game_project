@@ -16,12 +16,15 @@
 /* ── Static monster table ─────────────────────────────────────────────── */
 
 static const monster_def_t g_monster_table[MONSTER_TYPE_COUNT] = {
-    /* GOBLIN — balanced: default monster */
-    { MONSTER_TYPE_GOBLIN, "Goblin", GOBLIN_INIT_HP, GOBLIN_INIT_ATK },
-    /* SLIME  — high HP, low ATK         */
-    { MONSTER_TYPE_SLIME,  "Slime",  SLIME_INIT_HP,  SLIME_INIT_ATK  },
-    /* BAT    — low HP,  high ATK        */
-    { MONSTER_TYPE_BAT,    "Bat",    BAT_INIT_HP,    BAT_INIT_ATK    },
+    /* GOBLIN — balanced: default monster, medium range, ground */
+    { MONSTER_TYPE_GOBLIN, "Goblin", GOBLIN_INIT_HP, GOBLIN_INIT_ATK,
+      GOBLIN_PERCEPTION_RANGE, 0 },
+    /* SLIME  — high HP, low ATK, short range, ground           */
+    { MONSTER_TYPE_SLIME,  "Slime",  SLIME_INIT_HP,  SLIME_INIT_ATK,
+      SLIME_PERCEPTION_RANGE,  0 },
+    /* BAT    — low HP, high ATK, wide range, flying            */
+    { MONSTER_TYPE_BAT,    "Bat",    BAT_INIT_HP,    BAT_INIT_ATK,
+      BAT_PERCEPTION_RANGE,    1 },
 };
 
 /* ── Public API ───────────────────────────────────────────────────────── */

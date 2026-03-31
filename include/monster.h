@@ -41,6 +41,17 @@ typedef enum {
 #define BAT_INIT_HP      10  /* bat starting HP     (< GOBLIN)  */
 #define BAT_INIT_ATK     10  /* bat starting ATK    (> GOBLIN)  */
 
+/* ── Per-type perception ranges (Manhattan distance threshold) ────────── */
+#define GOBLIN_PERCEPTION_RANGE  6  /* goblin starts chasing at ≤6 tiles  */
+#define SLIME_PERCEPTION_RANGE   4  /* slime has shorter perception range  */
+#define BAT_PERCEPTION_RANGE     8  /* bat has widest perception range     */
+
+/* ── Monster AI state ────────────────────────────────────────────────── */
+typedef enum {
+    MONSTER_STATE_IDLE    = 0,  /* player outside range: random walk */
+    MONSTER_STATE_CHASING = 1   /* player inside range:  BFS chase   */
+} monster_state_t;
+
 /* ── Legacy aliases (kept for existing code that uses MONSTER_INIT_*) ── */
 #define MONSTER_INIT_HP    GOBLIN_INIT_HP
 #define MONSTER_INIT_ATK   GOBLIN_INIT_ATK
@@ -55,13 +66,17 @@ typedef enum {
  * alive == 0 means this pool slot is free and must be ignored by callers.
  */
 typedef struct {
-    int           x;      /* column in viewport [0, MAP_WIDTH)  */
-    int           y;      /* row    in viewport [0, VIEWPORT_H) */
-    int           hp;     /* current hit points                 */
-    int           max_hp; /* maximum HP — set at spawn (after scaling) */
-    int           atk;    /* attack power                       */
-    int           alive;  /* non-zero while the monster is active */
-    monster_type_t type;  /* species of this monster            */
+    int             x;               /* column in viewport [0, MAP_WIDTH)       */
+    int             y;               /* row    in viewport [0, VIEWPORT_H)      */
+    int             hp;              /* current hit points                      */
+    int             max_hp;          /* maximum HP — set at spawn (after scale) */
+    int             atk;             /* attack power                            */
+    int             alive;           /* non-zero while the monster is active    */
+    monster_type_t  type;            /* species of this monster                 */
+    monster_state_t state;           /* AI state: IDLE or CHASING               */
+    int             can_fly;         /* 1 = ignores walls during movement       */
+    int             perception_range;/* Manhattan distance chase threshold       */
+    tile_type_t     tile_under;      /* tile beneath this monster (restored on move) */
 } monster_t;
 
 /* ── Monster API ──────────────────────────────────────────────────────── */

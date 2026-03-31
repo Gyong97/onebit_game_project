@@ -139,20 +139,24 @@ static int test_monster_step_prefers_horizontal_on_wide_diagonal(void)
     return 0;
 }
 
-/* Diagonal with |dy| > |dx|: prefers vertical step */
+/* Diagonal position within range: BFS reduces Manhattan distance */
 static int test_monster_step_prefers_vertical_on_tall_diagonal(void)
 {
     map_t    map;
     monster_t m;
     player_t  p;
+    int dist_before, dist_after;
 
-    /* Monster at (3,1), player at (5,8): dx=+2, dy=+7 → prefer vertical */
-    TEST_ASSERT(setup_map_with_entities(&map, &m, 3, 1, &p, 5, 8) == 0,
+    /* Monster at (3,2), player at (5,6): dist=2+4=6 == GOBLIN range → CHASING.
+     * BFS finds shortest path; distance must decrease regardless of direction. */
+    TEST_ASSERT(setup_map_with_entities(&map, &m, 3, 2, &p, 5, 6) == 0,
                 "setup must succeed");
+    dist_before = iabs(p.x - m.x) + iabs(p.y - m.y);
     TEST_ASSERT(monster_step(&m, &p, &map) == 0,
                 "monster_step should return 0");
-    TEST_ASSERT(m.x == 3, "monster x must not change");
-    TEST_ASSERT(m.y == 2, "monster y must increase by 1 (vertical preferred)");
+    dist_after = iabs(p.x - m.x) + iabs(p.y - m.y);
+    TEST_ASSERT(dist_after < dist_before,
+                "BFS chase must reduce Manhattan distance on diagonal approach");
     return 0;
 }
 
@@ -203,9 +207,9 @@ static int test_monster_step_fallback_to_secondary_axis(void)
 }
 
 /*
- * Both axes blocked: monster stays in place.
- * Monster at (1,5), player at (5,5): prefer right (dx=+4, dy=0).
- * Block (2,5) with TILE_WALL. dy=0 → no vertical fallback → stay.
+ * Wall blocks direct path: BFS routes around — monster does NOT stay put.
+ * Monster at (1,5), player at (5,5), wall at (2,5).
+ * BFS finds path via (1,4) or (1,6); monster moves.
  */
 static int test_monster_step_stays_when_both_axes_blocked(void)
 {
@@ -215,13 +219,13 @@ static int test_monster_step_stays_when_both_axes_blocked(void)
 
     TEST_ASSERT(setup_map_with_entities(&map, &m, 1, 5, &p, 5, 5) == 0,
                 "setup must succeed");
-    map_set_tile(&map, 2, 5, TILE_WALL); /* block horizontal */
-    /* dy=0, no vertical option */
+    map_set_tile(&map, 2, 5, TILE_WALL); /* block direct horizontal path */
 
     TEST_ASSERT(monster_step(&m, &p, &map) == 0,
-                "monster_step when fully blocked should return 0");
-    TEST_ASSERT(m.x == 1, "monster x must not change when both axes blocked");
-    TEST_ASSERT(m.y == 5, "monster y must not change when both axes blocked");
+                "monster_step should return 0");
+    /* BFS finds alternate route: monster must move to start routing around */
+    TEST_ASSERT(m.x != 1 || m.y != 5,
+                "monster must route around wall via BFS (not stay put)");
     return 0;
 }
 

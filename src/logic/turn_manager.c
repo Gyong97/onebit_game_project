@@ -238,14 +238,15 @@ int turn_manager_shift_monsters(game_state_t *p_state)
             continue;
         }
 
-        /* Clear tile at current position */
+        /* Restore the tile beneath this monster (floor, or wall for bats) */
         map_set_tile(&p_state->map,
                      p_state->monsters[i].x,
                      p_state->monsters[i].y,
-                     TILE_FLOOR);
+                     p_state->monsters[i].tile_under);
 
-        /* Shift monster down one row */
+        /* Shift monster down one row; new position is assumed floor */
         p_state->monsters[i].y++;
+        p_state->monsters[i].tile_under = TILE_FLOOR;
 
         if (p_state->monsters[i].y >= VIEWPORT_H) {
             /* Monster fell off the bottom of the viewport — remove it */

@@ -32,6 +32,8 @@ typedef struct {
     char            name[MONSTER_NAME_MAX];
     int             base_hp;
     int             base_atk;
+    int             perception_range; /* Manhattan distance chase threshold */
+    int             can_fly;          /* 1 = ignores walls during movement  */
 } monster_def_t;
 
 /* ── Monster DB API ───────────────────────────────────────────────────── */
