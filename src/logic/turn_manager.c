@@ -65,6 +65,10 @@ int turn_manager_init(game_state_t *p_state)
         /* alive == 0 from memset */
     }
 
+    /* Initialise shop state (must be explicit — struct layout changes can
+     * leave stack-allocated game_state_t with garbage in shop.active) */
+    memset(&p_state->shop, 0, sizeof(p_state->shop));
+
     /* Initialise UI notification state */
     for (i = 0; i < CHEST_LOOT_MAX; i++) {
         p_state->chest_loot_names[i][0] = '\0';
